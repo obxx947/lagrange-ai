@@ -1,0 +1,31 @@
+graph TD
+    %% ============================================================
+    %% 拉格朗日AI — Mermaid 架构图
+    %% ============================================================
+    
+    A[🌐 浏览器/手机] -->|HTTP :3000| B[FastAPI 主服务]
+    
+    B --> C[认证模块<br>JWT + bcrypt]
+    B --> D[AI对话模块<br>chat_service.py]
+    B --> E[模拟器模块<br>simulator_service.py]
+    B --> F[管理模块<br>admin_routes.py]
+    
+    C --> G[(SQLite<br>5张表)]
+    E --> G
+    
+    D --> H[FAISS向量库<br>TF-IDF + jieba]
+    D --> I[DeepSeek API<br>大模型推理]
+    
+    H --> J[lagrange_docs<br>玩家攻略资料]
+    
+    I --> K[系统提示词<br>游戏知识增强]
+    K --> J
+    
+    F --> L[充值对账<br>recharge_log]
+    L --> G
+    
+    style A fill:#1a1f2e,stroke:#3b8bff,color:#e2e8f0
+    style B fill:#162032,stroke:#06c8e0,color:#e2e8f0
+    style G fill:#1a1f2e,stroke:#f0a020,color:#e2e8f0
+    style H fill:#1a1f2e,stroke:#9060e0,color:#e2e8f0
+    style I fill:#1a1f2e,stroke:#e04040,color:#e2e8f0

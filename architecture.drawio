@@ -1,0 +1,57 @@
+<!-- ============================================================
+  拉格朗日AI — Draw.io 图表
+  系统架构图（用 draw.io 打开）
+  ============================================================ -->
+<mxfile host="app.diagrams.net" modified="2026-07-20T00:00:00.000Z" agent="LagrangeAI" version="21.0.0">
+  <diagram name="系统架构" id="arch">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- 浏览器 -->
+        <mxCell id="browser" value="🌐 浏览器&lt;br&gt;HTML/CSS/JS SPA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#3b8bff;fontColor=#e2e8f0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="140" height="70" as="geometry"/>
+        </mxCell>
+        
+        <!-- 手机 -->
+        <mxCell id="mobile" value="📱 手机/平板&lt;br&gt;同WiFi访问" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#3b8bff;fontColor=#e2e8f0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="420" width="140" height="70" as="geometry"/>
+        </mxCell>
+        
+        <!-- FastAPI -->
+        <mxCell id="fastapi" value="⚡ FastAPI 后端&lt;br&gt;路由/鉴权/业务逻辑" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#162032;strokeColor=#06c8e0;fontColor=#e2e8f0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="300" y="320" width="180" height="80" as="geometry"/>
+        </mxCell>
+        
+        <!-- SQLite -->
+        <mxCell id="sqlite" value="🗄 SQLite&lt;br&gt;5张核心表" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#f0a020;fontColor=#e2e8f0;" vertex="1" parent="1">
+          <mxGeometry x="560" y="240" width="120" height="90" as="geometry"/>
+        </mxCell>
+        
+        <!-- ChromaDB/FAISS -->
+        <mxCell id="rag" value="🔍 FAISS 向量库&lt;br&gt;TF-IDF + jieba" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#9060e0;fontColor=#e2e8f0;" vertex="1" parent="1">
+          <mxGeometry x="560" y="380" width="120" height="70" as="geometry"/>
+        </mxCell>
+        
+        <!-- DeepSeek -->
+        <mxCell id="deepseek" value="🧠 DeepSeek API&lt;br&gt;大模型推理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#e04040;fontColor=#e2e8f0;" vertex="1" parent="1">
+          <mxGeometry x="760" y="320" width="140" height="70" as="geometry"/>
+        </mxCell>
+        
+        <!-- 资料库 -->
+        <mxCell id="docs" value="📚 lagrange_docs&lt;br&gt;玩家攻略资料" style="shape=document;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#20b870;fontColor=#e2e8f0;" vertex="1" parent="1">
+          <mxGeometry x="760" y="440" width="140" height="70" as="geometry"/>
+        </mxCell>
+        
+        <!-- 连接线 -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3b8bff;" edge="1" parent="1" source="browser" target="fastapi"/>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3b8bff;" edge="1" parent="1" source="mobile" target="fastapi"/>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#f0a020;" edge="1" parent="1" source="fastapi" target="sqlite"/>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9060e0;" edge="1" parent="1" source="fastapi" target="rag"/>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#e04040;" edge="1" parent="1" source="fastapi" target="deepseek"/>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#20b870;" edge="1" parent="1" source="deepseek" target="docs"/>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

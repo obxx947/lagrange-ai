@@ -1,0 +1,155 @@
+// ============================================================
+// 拉格朗日AI — SCSS 主题变量和混入
+// 编译：sass theme.scss theme.css
+// ============================================================
+
+// 深空配色方案
+$bg-deep: #080c14;
+$bg-base: #0f1624;
+$bg-card: #162032;
+$bg-hover: #1c2a3f;
+$text-primary: #e8ecf2;
+$text-secondary: #a0b4cc;
+$text-muted: #607590;
+$accent: #3b8bff;
+$accent-dark: #1a5fcf;
+$cyan: #06c8e0;
+$gold: #f0a020;
+$red: #e04040;
+$green: #20b870;
+$purple: #9060e0;
+
+// 评级颜色映射
+$rating-colors: (
+  'S': $gold,
+  'A': $purple,
+  'B': $accent,
+  'C': $text-muted,
+  'D': $red,
+);
+
+// 舰船类型图标
+$ship-icons: (
+  'battleship': '🚢',
+  'battlecruiser': '🛡️',
+  'aircraftcarrier': '🛫',
+  'support': '🏥',
+  'cruiser': '🚀',
+  'destroyer': '🔺',
+  'frigate': '🔹',
+  'fighter': '✈️',
+  'corvette': '🛸',
+);
+
+// 混入：卡片样式
+@mixin card($border-color: $bg-hover) {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: $accent;
+    transform: translateY(-2px);
+  }
+}
+
+// 混入：渐变按钮
+@mixin gradient-btn($from: $accent, $to: $accent-dark) {
+  background: linear-gradient(135deg, $from, $to);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba($from, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// 混入：深色输入框
+@mixin dark-input {
+  background: $bg-deep;
+  border: 1px solid $bg-hover;
+  border-radius: 6px;
+  color: $text-primary;
+  padding: 8px 12px;
+  font-size: 13px;
+  
+  &:focus {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba($accent, 0.2);
+  }
+}
+
+// 混入：HP条
+@mixin hp-bar($height: 4px) {
+  height: $height;
+  background: $bg-hover;
+  border-radius: calc($height / 2);
+  overflow: hidden;
+  
+  .fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.3s ease;
+  }
+}
+
+// 混入：响应式
+@mixin mobile {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+// 生成评级样式
+@each $grade, $color in $rating-colors {
+  .rating-#{$grade} {
+    background: $color;
+    color: if($grade == 'S', #000, #fff);
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+}
+
+// 舰船卡片
+.ship-card {
+  @include card;
+  cursor: pointer;
+  
+  .ship-name { font-weight: 600; color: $text-primary; font-size: 13px; }
+  .ship-type { font-size: 11px; color: $text-muted; }
+  .ship-hp { font-size: 11px; color: $text-secondary; }
+}
+
+// 战斗日志
+.battle-log {
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  color: $text-secondary;
+  background: $bg-deep;
+  border: 1px solid $bg-hover;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  
+  .kill { color: $red; }
+  .system-damage { color: $gold; }
+  .victory { color: $green; font-weight: 700; }
+}

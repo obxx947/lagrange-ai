@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e17"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <linearGradient id="ship" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b8bff"/>
+      <stop offset="100%" stop-color="#06c8e0"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆 -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg)" stroke="#3b8bff" stroke-width="3" opacity="0.6"/>
+  
+  <!-- 星舰主体 -->
+  <g transform="translate(256,240)">
+    <!-- 舰身 -->
+    <polygon points="0,-100 80,40 0,120 -80,40" fill="url(#ship)" opacity="0.9"/>
+    <!-- 引擎光芒 -->
+    <polygon points="-30,20 -10,100 10,100 30,20" fill="#f0a020" opacity="0.8"/>
+    <polygon points="-15,20 -5,80 5,80 15,20" fill="#fff" opacity="0.6"/>
+    <!-- 驾驶舱 -->
+    <ellipse cx="0" cy="-10" rx="20" ry="25" fill="#0a0e17" opacity="0.8"/>
+    <!-- 翼 -->
+    <polygon points="80,0 160,-5 160,10 80,20" fill="#3b8bff" opacity="0.7"/>
+    <polygon points="-80,0 -160,-5 -160,10 -80,20" fill="#3b8bff" opacity="0.7"/>
+  </g>
+  
+  <!-- 环绕轨道 -->
+  <ellipse cx="256" cy="340" rx="180" ry="30" fill="none" stroke="#06c8e0" stroke-width="1" opacity="0.3" stroke-dasharray="8,8"/>
+  
+  <!-- AI文字 -->
+  <text x="256" y="420" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#3b8bff" opacity="0.9">AI</text>
+  <text x="256" y="450" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#a0b4cc" opacity="0.7">战术推演</text>
+</svg>

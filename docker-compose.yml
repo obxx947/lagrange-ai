@@ -1,0 +1,46 @@
+version: '3.8'
+
+# ============================================================
+# 拉格朗日AI — Docker Compose 配置
+# 启动：docker-compose up -d
+# ============================================================
+
+services:
+  lagrange-api:
+    build: .
+    container_name: lagrange-ai
+    ports:
+      - "3000:3000"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin_lagrange_2024}
+      - JWT_SECRET=${JWT_SECRET:-lagrange-jwt-secret}
+      - HOST=0.0.0.0
+      - PORT=3000
+    volumes:
+      - ./lagrange_docs:/app/lagrange_docs
+      - ./chroma_db:/app/chroma_db
+      - ./db_backup:/app/db_backup
+      - ./lagrange.db:/app/lagrange.db
+      - ./exports:/app/exports
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://127.0.0.1:3000/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # 可选：Nginx 反向代理（如需HTTPS）
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - lagrange-api
+
+networks:
+  default:
+    name: lagrange-network

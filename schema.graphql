@@ -1,0 +1,217 @@
+# ============================================================
+# 拉格朗日AI — GraphQL Schema
+# 舰船数据查询接口定义
+# ============================================================
+
+type Query {
+  """健康检查"""
+  health: HealthStatus!
+
+  """获取所有舰船（支持筛选和排序）"""
+  ships(
+    type: ShipType
+    rating: String
+    search: String
+    limit: Int = 50
+    offset: Int = 0
+  ): ShipListResponse!
+
+  """根据ID获取单艘舰船详情"""
+  ship(id: ID!): ShipDetail
+
+  """获取当前用户信息"""
+  me: UserInfo
+
+  """获取用户存档列表"""
+  mySaves: [FleetSave!]!
+
+  """获取充值日志（管理员）"""
+  rechargeLogs(limit: Int = 50): [RechargeLog!]!
+}
+
+type Mutation {
+  """用户注册"""
+  register(username: String!, password: String!): AuthPayload!
+
+  """用户登录"""
+  login(username: String!, password: String!): AuthPayload!
+
+  """AI对话"""
+  chat(message: String!, history: [ChatMessageInput]): ChatResponse!
+
+  """保存模拟器编队"""
+  saveFleet(name: String!, config: JSON!): FleetSave!
+
+  """删除编队存档"""
+  deleteFleetSave(id: ID!): Boolean!
+
+  """管理员充值"""
+  rechargeUser(targetUsername: String!, amount: Int!): RechargeResult!
+
+  """重建向量索引"""
+  rebuildIndex: RebuildResult!
+}
+
+# ---- 类型定义 ----
+
+enum ShipType {
+  BATTLESHIP
+  BATTLECRUISER
+  AIRCRAFTCARRIER
+  SUPPORT
+  CRUISER
+  DESTROYER
+  FRIGATE
+  FIGHTER
+  CORVETTE
+}
+
+type ShipDetail {
+  id: ID!
+  name: String!
+  variant: String
+  type: ShipType!
+  typeName: String!          # 中文类型名
+  size: String!
+  position: String!
+  hp: Int!
+  physicalArmor: Int!
+  energyArmor: Int!
+  commandValue: Int!
+  serviceLimit: Int
+  speed: ShipSpeed
+  ratings: ShipRatings!
+  isCarrier: Boolean!
+  aircraftSlots: AircraftSlots
+  modules: [ShipModule!]
+  combatScore: Float!        # 计算得出的战斗力评分
+}
+
+type ShipSpeed {
+  cruise: Int!
+  warp: Int!
+}
+
+type ShipRatings {
+  antiShip: Rating!
+  antiAir: Rating!
+  siege: Rating!
+  survival: Rating!
+  strategy: Rating!
+}
+
+enum Rating {
+  S  # 顶级
+  A  # 优秀
+  B  # 良好
+  C  # 一般
+  D  # 较差
+}
+
+type AircraftSlots {
+  fighter: Int!
+  corvette: Int!
+}
+
+type ShipModule {
+  name: String!
+  type: String!
+  weapons: [WeaponDef!]
+  variants: [ModuleVariant!]
+}
+
+type WeaponDef {
+  name: String!
+  damageType: String!
+  weaponType: String!
+  singleDamage: Float!
+  attacks: Int!
+  cooldown: Float!
+}
+
+type ModuleVariant {
+  name: String!
+  type: String
+  effect: String
+}
+
+# ---- 响应类型 ----
+
+type ShipListResponse {
+  ships: [ShipDetail!]!
+  total: Int!
+  source: String!
+}
+
+type HealthStatus {
+  status: String!
+  timestamp: String!
+  indexBuilt: Boolean!
+}
+
+type AuthPayload {
+  accessToken: String!
+  tokenType: String!
+  expiresIn: Int!
+  username: String!
+  platformTokens: Int!
+}
+
+type UserInfo {
+  id: ID!
+  username: String!
+  platformTokens: Int!
+  deepseekInputTokens: Int!
+  deepseekOutputTokens: Int!
+  createdAt: String!
+}
+
+type ChatResponse {
+  answer: String!
+  sourceDocs: [SourceDoc!]!
+  promptTokens: Int!
+  completionTokens: Int!
+  totalTokens: Int!
+  platformTokensRemaining: Int!
+}
+
+type SourceDoc {
+  fileName: String!
+  snippet: String!
+}
+
+type FleetSave {
+  id: ID!
+  saveName: String!
+  fleetConfig: JSON!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type RechargeLog {
+  id: ID!
+  adminName: String!
+  targetName: String!
+  amount: Int!
+  createdAt: String!
+}
+
+type RechargeResult {
+  success: Boolean!
+  message: String!
+}
+
+type RebuildResult {
+  success: Boolean!
+  message: String!
+  chunkCount: Int
+}
+
+# 输入类型
+input ChatMessageInput {
+  role: String!
+  content: String!
+}
+
+# 标量
+scalar JSON

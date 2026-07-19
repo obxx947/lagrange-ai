@@ -1,0 +1,53 @@
+{
+  // ============================================================
+  // 拉格朗日AI — JSON5 配置（支持注释和尾随逗号）
+  // ============================================================
+  name: "无尽的拉格朗日 AI战术推演中心",
+  version: "2.0.0",
+
+  server: {
+    host: "0.0.0.0",
+    port: 3000,
+    workers: 1,
+  },
+
+  // DeepSeek AI 配置
+  deepseek: {
+    model: "deepseek-chat",
+    temperature: 0.3,     // 低温度确保一致性
+    maxTokens: 2048,
+    timeout: 120,         // API超时秒数
+  },
+
+  // 知识库配置
+  rag: {
+    chunkSize: 500,
+    chunkOverlap: 50,
+    retrievalTopK: 5,
+    maxFeatures: 5000,
+    embeddingModel: "tfidf",  // tfidf 或 sentence-transformers
+  },
+
+  // 战斗引擎参数（基于游戏公式）
+  battle: {
+    tuningCoefficient: 1.3,
+    minDamageRatio: 0.1,      // 未穿透保底10%
+    baseCritRate: 0.15,       // 基础暴击15%
+    systemDamageChance: 0.10, // 系统破坏概率10%
+    plutusReduction: 0.30,    // 普卢托斯旗舰30%减伤
+    maxSimTime: 300,
+  },
+
+  // 舰船类型列表
+  shipTypes: [
+    "battleship",         // 战列舰
+    "battlecruiser",      // 战列巡洋舰
+    "aircraftcarrier",    // 航空母舰
+    "support",            // 支援舰
+    "cruiser",            // 巡洋舰
+    "destroyer",          // 驱逐舰
+    "frigate",            // 护卫舰
+    "fighter",            // 战机
+    "corvette",           // 护航艇
+  ],
+}

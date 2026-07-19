@@ -1,0 +1,21 @@
+id	name	variant	type	size	position	hp	armor	shield	cv	cruise	warp	antiShip	antiAir	siege	survival	strategy
+bc_eternal_storm	永恒风暴级		battlecruiser	large	front	320000	120	15	40	400	2400	S	B	A	A	S
+bc_plutus	普卢托斯之盾级		battlecruiser	large	front	350000	150	20	42	380	2300	A	C	A	S	S
+bb_constantine	君士坦丁大帝级	M1	battleship	large	mid	280000	100	18	38	350	2200	S	D	S	A	A
+bb_st59	ST59级	电磁	battleship	large	mid	260000	90	25	36	370	2250	A	D	S	A	B
+cv_cv3000	CV3000级		aircraftcarrier	large	back	240000	80	12	35	320	2100	C	S	C	B	S
+cr_light_chaser	光追级		cruiser	small	mid	85000	45	10	18	650	4200	A	A	C	B	B
+cr_callisto	卡利斯托级		cruiser	small	mid	78000	40	8	16	680	4400	A	C	B	B	A
+cr_aion	爱奥级		cruiser	small	front	95000	55	6	20	580	3800	B	C	B	A	B
+dd_ionstorm	阋神星重炮级		destroyer	small	mid	28000	18	5	8	850	5500	A	D	D	C	B
+dd_lancer	枪骑兵级		destroyer	small	mid	25000	15	5	7	880	5700	B	S	D	C	A
+ff_carillion	卡利莱恩级		frigate	small	front	12000	12	3	4	1000	6500	C	B	D	B	B
+ff_relia	雷利亚特隐身级		frigate	small	mid	10000	8	4	4	1050	6800	A	D	D	C	S
+ff_chenghai	澄海级		frigate	small	front	14000	15	2	5	900	6000	C	C	D	A	C
+ff_cishuimu	刺水母级		frigate	small	back	8000	6	8	5	950	6200	B	S	D	D	A
+ac_mistral	米斯特拉		fighter	aircraft	air	2500	2	1	2	3000	0	A	S	D	C	A
+ac_vitas_b	维塔斯B		fighter	aircraft	air	2200	2	1	2	3200	0	S	C	D	C	B
+ac_hive	蜂巢		fighter	aircraft	air	2800	3	1	2	2800	0	A	A	B	B	A
+ac_cvt800	CVT800脉冲炮艇		corvette	aircraft	air	3500	4	2	2	2500	0	B	A	D	B	B
+ac_stingray	鳐鱼级		corvette	aircraft	air	3000	3	2	2	2700	0	S	D	B	B	B
+ac_br050	BR050		corvette	aircraft	air	3200	3	2	2	2600	0	A	B	D	B	A

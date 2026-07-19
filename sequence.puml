@@ -1,0 +1,45 @@
+@startuml
+' ============================================================
+' 拉格朗日AI — PlantUML 时序图
+' 渲染：plantuml sequence.puml
+' ============================================================
+
+title 拉格朗日AI — AI对话流程
+
+actor 用户 as User
+participant "前端SPA" as Frontend
+participant "FastAPI" as API
+participant "FAISS向量库" as RAG
+participant "DeepSeek API" as AI
+database "SQLite" as DB
+
+User -> Frontend: 输入问题"光追级防空能力如何？"
+Frontend -> API: POST /api/chat (JWT鉴权)
+
+activate API
+
+API -> DB: 查询用户Token余额
+DB --> API: 余额: 8500
+
+alt 余额不足
+  API --> Frontend: 402 余额不足
+  Frontend -> User: 弹出充值提示
+else 余额充足
+  API -> RAG: 检索相关文档
+  RAG --> API: Top-5 相关片段 [战斗机制.txt]
+  
+  API -> API: 构建系统提示词\n(游戏知识+检索结果)
+  
+  API -> AI: DeepSeek Chat API\n(system prompt + 用户问题)
+  AI --> API: AI回复 + Token用量
+  
+  API -> DB: 扣减Token\n保存对话记录
+  DB --> API: 扣减成功
+  
+  API --> Frontend: ChatResponse\n(answer + sourceDocs + tokens)
+  Frontend -> User: 显示AI回复\n标注资料来源
+end
+
+deactivate API
+
+@enduml

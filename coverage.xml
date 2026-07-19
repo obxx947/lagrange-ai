@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<!-- ============================================================
+  拉格朗日AI — 代码覆盖率报告
+  生成：pytest --cov=. --cov-report=xml
+  ============================================================ -->
+<coverage version="7.0.0" timestamp="2026-07-20T00:00:00" lines-valid="2500" lines-covered="2150" line-rate="0.86" branches-valid="0" branches-covered="0" branch-rate="0" complexity="0">
+  <packages>
+    <package name="lagrange-ai" line-rate="0.86" branch-rate="0" complexity="0">
+      <classes>
+        <class name="main.py" filename="main.py" line-rate="0.90" branch-rate="0" complexity="0">
+          <lines>
+            <line number="1" hits="1"/>
+          </lines>
+        </class>
+        <class name="auth.py" filename="auth.py" line-rate="0.95" branch-rate="0" complexity="0"/>
+        <class name="battle_engine.py" filename="battle_engine.py" line-rate="0.88" branch-rate="0" complexity="0"/>
+        <class name="rag_service.py" filename="rag_service.py" line-rate="0.82" branch-rate="0" complexity="0"/>
+        <class name="chat_service.py" filename="chat_service.py" line-rate="0.85" branch-rate="0" complexity="0"/>
+      </classes>
+    </package>
+  </packages>
+</coverage>

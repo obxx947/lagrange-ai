@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无尽的拉格朗日 — 星港指挥中心</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 星空画布 -->
+<canvas id="starfield"></canvas>
+
+<!-- 导航 -->
+<nav id="topNav">
+  <div class="nav-brand">🚀 拉格朗日 · 星港指挥中心</div>
+  <div class="nav-links">
+    <a href="/">🤖 AI战术中心</a>
+    <a href="#fleet">⚔ 舰队展示</a>
+    <a href="#features">📊 核心功能</a>
+    <a href="#about">ℹ 关于</a>
+  </div>
+</nav>
+
+<!-- 主视觉区 Hero -->
+<section id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">v2.0 · 169艘舰船数据库</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">无尽的拉格朗日</span>
+      <span class="subtitle">AI 战术推演中心</span>
+    </h1>
+    <p class="hero-desc">
+      基于RAG增强检索的专业战斗推演智能体<br>
+      整合玩家社区权威资料，提供精准战术分析
+    </p>
+    <div class="hero-buttons">
+      <a href="/" class="btn-primary">🎯 进入AI战术中心</a>
+      <a href="#fleet" class="btn-outline">📚 浏览舰船图鉴</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">169</span><span class="stat-label">艘舰船</span></div>
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">种类型</span></div>
+      <div class="stat"><span class="stat-num">S-D</span><span class="stat-label">五级评级</span></div>
+      <div class="stat"><span class="stat-num">500</span><span class="stat-label">指挥值上限</span></div>
+    </div>
+  </div>
+  <!-- 浮动舰船剪影 -->
+  <div class="hero-ships">
+    <div class="floating-ship ship-1">🛡️</div>
+    <div class="floating-ship ship-2">🚀</div>
+    <div class="floating-ship ship-3">🛸</div>
+    <div class="floating-ship ship-4">✈️</div>
+    <div class="floating-ship ship-5">🛫</div>
+  </div>
+</section>
+
+<!-- 舰队展示 -->
+<section id="fleet">
+  <h2 class="section-title">⚔ 精英舰队展示</h2>
+  <p class="section-desc">来自169艘舰船数据库的精锐力量</p>
+  
+  <div class="fleet-grid">
+    <div class="fleet-card">
+      <div class="card-icon">🛡️</div>
+      <h3>永恒风暴级</h3>
+      <p class="card-type">战列巡洋舰 · 超主力</p>
+      <div class="card-stats">
+        <span>HP 320,000</span><span>装甲 120</span><span>对舰 S</span>
+      </div>
+      <p class="card-desc">顶级战巡，兼具输出与生存能力。D2模块提供卓越防空，是舰队中坚力量。</p>
+    </div>
+    <div class="fleet-card">
+      <div class="card-icon">🚀</div>
+      <h3>光追级</h3>
+      <p class="card-type">巡洋舰 · 主力</p>
+      <div class="card-stats">
+        <span>HP 85,000</span><span>装甲 45</span><span>防空 A</span>
+      </div>
+      <p class="card-desc">顶级防空巡洋舰，对空能力A级，全舰队防空支援，性价比极高。</p>
+    </div>
+    <div class="fleet-card">
+      <div class="card-icon">🛫</div>
+      <h3>CV3000级</h3>
+      <p class="card-type">航空母舰 · 超主力</p>
+      <div class="card-stats">
+        <span>HP 240,000</span><span>8战机槽</span><span>防空 S</span>
+      </div>
+      <p class="card-desc">主力航母，8战机+4护航艇槽位，制空权掌控者，战略价值S级。</p>
+    </div>
+    <div class="fleet-card">
+      <div class="card-icon">✈️</div>
+      <h3>米斯特拉</h3>
+      <p class="card-type">战机 · 舰载机</p>
+      <div class="card-stats">
+        <span>HP 2,500</span><span>对舰 A</span><span>防空 S</span>
+      </div>
+      <p class="card-desc">主动防空战机，可独立猎杀任何空中目标，是航母的最佳搭档。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 核心功能 -->
+<section id="features">
+  <h2 class="section-title">📊 核心功能</h2>
+  <div class="features-grid">
+    <div class="feature-item">
+      <div class="feature-icon">🧠</div>
+      <h3>AI战术分析</h3>
+      <p>基于DeepSeek大模型+本地资料库的RAG增强推理，提供专业战斗分析</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">⚔</div>
+      <h3>战斗模拟器</h3>
+      <p>实时推演引擎，支持护航/轰炸双模式，基于游戏真实公式计算伤害</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📚</div>
+      <h3>169艘舰船图鉴</h3>
+      <p>完整舰船数据库，含HP/装甲/护盾/武器模块/评级等全维度数据</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">💾</div>
+      <h3>云端编队存档</h3>
+      <p>登录账号后编队数据永久保存，换设备登录自动同步</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🔒</div>
+      <h3>局域网部署</h3>
+      <p>纯本地运行，无需公网/域名/云服务器，数据完全自主掌控</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">💰</div>
+      <h3>Token计费系统</h3>
+      <p>注册即赠10,000Token，管理员后台充值，全流程对账</p>
+    </div>
+  </div>
+</section>
+
+<!-- 关于/CTA -->
+<section id="about">
+  <div class="cta-box">
+    <h2>🌌 准备好探索拉格朗日星系了吗？</h2>
+    <p>立即进入AI战术推演中心，获取专业级舰队搭配建议和战斗分析</p>
+    <a href="/" class="btn-primary" style="font-size:1.2rem;padding:16px 40px">🚀 进入AI战术中心</a>
+    <p class="small-note">基于169艘舰船数据库 · 社区权威攻略 · 游戏机制公式</p>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<footer>
+  <p>📜 免责声明：本工具为玩家社区自制分析工具，与网易及《无尽的拉格朗日》官方无关。</p>
+  <p>AI分析结论仅供参考，数据来源于玩家社区公开资料。</p>
+  <p style="margin-top:8px;opacity:0.5">© 无尽的拉格朗日 星港指挥中心 · 局域网版本</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

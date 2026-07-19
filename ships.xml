@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ships.xsl"?>
+<!-- ============================================================
+  拉格朗日AI — 舰船数据 XML 格式
+  包含169艘舰船的完整结构化数据
+  ============================================================ -->
+<ships xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       game="无尽的拉格朗日"
+       generator="拉格朗日AI战术推演中心 v2"
+       count="169"
+       exportDate="2026-07-20">
+  
+  <metadata>
+    <source>lglrmax.html — 配舰星港模拟器 v7</source>
+    <author>能二 (ID:10636401507)</author>
+    <parser>parse_ships.js (Node.js)</parser>
+    <gameVersion>最新版本</gameVersion>
+  </metadata>
+  
+  <categories>
+    <category id="battleship" name="战列舰" size="large" superCapital="true"/>
+    <category id="battlecruiser" name="战列巡洋舰" size="large" superCapital="true"/>
+    <category id="aircraftcarrier" name="航空母舰" size="large" superCapital="true"/>
+    <category id="support" name="支援舰" size="large" superCapital="true"/>
+    <category id="cruiser" name="巡洋舰" size="small" superCapital="false"/>
+    <category id="destroyer" name="驱逐舰" size="small" superCapital="false"/>
+    <category id="frigate" name="护卫舰" size="small" superCapital="false"/>
+    <category id="fighter" name="战机" size="aircraft" superCapital="false"/>
+    <category id="corvette" name="护航艇" size="aircraft" superCapital="false"/>
+  </categories>
+  
+  <ratings>
+    <rating grade="S" meaning="顶级性能，同类型最优"/>
+    <rating grade="A" meaning="优秀性能，高性价比"/>
+    <rating grade="B" meaning="良好性能，特定场景有用"/>
+    <rating grade="C" meaning="一般性能"/>
+    <rating grade="D" meaning="较差性能，不推荐"/>
+  </ratings>
+  
+  <!-- 完整舰船数据由 parse_ships.js 动态生成 XML -->
+  <!-- 运行: node parse_ships.js --format xml -->
+  
+  <sampleShips>
+    <ship id="cr_light_chaser">
+      <name>光追级</name>
+      <type>cruiser</type>
+      <position>mid</position>
+      <hp>85000</hp>
+      <physicalArmor>45</physicalArmor>
+      <energyArmor>10</energyArmor>
+      <commandValue>18</commandValue>
+      <speed cruise="650" warp="4200"/>
+      <ratings antiShip="A" antiAir="A" siege="C" survival="B" strategy="B"/>
+    </ship>
+    <ship id="cr_callisto">
+      <name>卡利斯托级</name>
+      <type>cruiser</type>
+      <position>mid</position>
+      <hp>78000</hp>
+      <physicalArmor>40</physicalArmor>
+      <energyArmor>8</energyArmor>
+      <commandValue>16</commandValue>
+      <speed cruise="680" warp="4400"/>
+      <ratings antiShip="A" antiAir="C" siege="B" survival="B" strategy="A"/>
+    </ship>
+    <ship id="cv_cv3000">
+      <name>CV3000级</name>
+      <type>aircraftcarrier</type>
+      <position>back</position>
+      <hp>240000</hp>
+      <physicalArmor>80</physicalArmor>
+      <energyArmor>12</energyArmor>
+      <commandValue>35</commandValue>
+      <isCarrier>true</isCarrier>
+      <aircraftSlots fighter="8" corvette="4"/>
+      <speed cruise="320" warp="2100"/>
+      <ratings antiShip="C" antiAir="S" siege="C" survival="B" strategy="S"/>
+    </ship>
+  </sampleShips>
+</ships>

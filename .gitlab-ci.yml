@@ -1,0 +1,62 @@
+# ============================================================
+# 拉格朗日AI — GitLab CI/CD 配置
+# ============================================================
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  PYTHON_VERSION: "3.12"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+
+cache:
+  paths:
+    - .pip-cache/
+
+# 测试阶段
+test:
+  stage: test
+  image: python:${PYTHON_VERSION}
+  script:
+    - pip install -r requirements.txt
+    - pip install pytest pytest-cov
+    - python -m py_compile *.py
+    - pytest test_api.py -v --tb=short --cov=. --cov-report=xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  only:
+    - main
+    - merge_requests
+
+# 代码检查
+lint:
+  stage: test
+  image: python:${PYTHON_VERSION}
+  script:
+    - pip install flake8
+    - flake8 *.py --max-line-length=120 --ignore=E203,W503
+  allow_failure: true
+
+# 舰船数据验证
+validate-ships:
+  stage: test
+  image: python:${PYTHON_VERSION}
+  script:
+    - python -c "import json; d=json.load(open('lagrange_docs/ship_database.json')); assert len(d) >= 20, '舰船数据不足'"
+    - python config_loader.py
+
+# 构建阶段（可选Docker构建）
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t lagrange-ai:${CI_COMMIT_SHORT_SHA} .
+  only:
+    - main

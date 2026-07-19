@@ -1,0 +1,33 @@
+include *.py
+include *.bat
+include *.ps1
+include *.sh
+include *.js
+include *.html
+include *.css
+include *.json
+include *.yaml
+include *.toml
+include *.ini
+include *.cfg
+include *.xml
+include *.sql
+include *.md
+include *.rst
+include *.txt
+include *.reg
+include *.vbs
+include *.hta
+include *.wsf
+include *.php
+include *.properties
+include *.env.example
+include requirements.txt
+include Makefile
+include .gitignore
+include .editorconfig
+include .htaccess
+recursive-include static *
+recursive-include deploy *
+recursive-include lagrange_docs *.txt *.md *.json
+recursive-include exports *.csv *.tsv *.txt

@@ -1,0 +1,20 @@
+{
+  // ============================================================
+  // 拉格朗日AI — Cypress E2E 测试配置
+  // ============================================================
+  "baseUrl": "http://127.0.0.1:3000",
+  "defaultCommandTimeout": 10000,
+  "viewportWidth": 1440,
+  "viewportHeight": 900,
+  "video": false,
+  "screenshotOnRunFailure": true,
+  "integrationFolder": "cypress/integration",
+  "fixturesFolder": "cypress/fixtures",
+  "supportFile": "cypress/support/index.js",
+  "testFiles": "**/*.spec.js",
+  "env": {
+    "apiUrl": "http://127.0.0.1:3000/api",
+    "testUser": "cypress_test",
+    "testPassword": "cypress123"
+  }
+}

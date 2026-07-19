@@ -1,0 +1,27 @@
+diff --git a/config.py b/config.py
+index abc1234..def5678 100644
+--- a/config.py
++++ b/config.py
+@@ -20,6 +20,7 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+ DEEPSEEK_CHAT_MODEL = os.getenv("DEEPSEEK_CHAT_MODEL", "deepseek-chat")
+ 
+ # 管理员配置
+-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin_lagrange_2024")
++ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "change_me_please")
+
+diff --git a/battle_engine.py b/battle_engine.py
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/battle_engine.py
+@@ -0,0 +1,350 @@
++# 新增完整战斗模拟引擎
++# 基于游戏真实公式实现
+
+diff --git a/static/index.html b/static/index.html
+index 2222222..3333333 100644
+--- a/static/index.html
++++ b/static/index.html
+@@ -1,5 +1,5 @@
+-<title>无尽的拉格朗日 · AI战术推演中心</title>
++<title>无尽的拉格朗日 · AI战术推演中心 v2</title>

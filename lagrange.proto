@@ -1,0 +1,171 @@
+// ============================================================
+// 拉格朗日AI — Protocol Buffers 定义
+// 编译：protoc --python_out=. lagrange.proto
+// 用途：高效的舰船数据序列化
+// ============================================================
+
+syntax = "proto3";
+
+package lagrange.ai;
+
+// 舰船评级
+enum Rating {
+  RATING_UNSPECIFIED = 0;
+  S = 1;
+  A = 2;
+  B = 3;
+  C = 4;
+  D = 5;
+}
+
+// 舰船类型
+enum ShipType {
+  SHIP_TYPE_UNSPECIFIED = 0;
+  BATTLESHIP = 1;
+  BATTLECRUISER = 2;
+  AIRCRAFT_CARRIER = 3;
+  SUPPORT = 4;
+  CRUISER = 5;
+  DESTROYER = 6;
+  FRIGATE = 7;
+  FIGHTER = 8;
+  CORVETTE = 9;
+}
+
+// 舰船速度
+message ShipSpeed {
+  int32 cruise = 1;  // 巡航速度
+  int32 warp = 2;    // 曲率速度
+}
+
+// 舰船评级集合
+message ShipRatings {
+  Rating anti_ship = 1;
+  Rating anti_air = 2;
+  Rating siege = 3;
+  Rating survival = 4;
+  Rating strategy = 5;
+}
+
+// 武器定义
+message WeaponDef {
+  string name = 1;
+  string damage_type = 2;  // physical / energy
+  string weapon_type = 3;  // direct / projectile
+  float single_damage = 4;
+  int32 attacks = 5;
+  int32 ammo = 6;
+  float cooldown = 7;
+  float lock_time = 8;
+  float attack_duration = 9;
+  bool can_crit = 10;
+  float hit_rate = 11;
+  float intercept_rate = 12;
+}
+
+// 舰船模块
+message ShipModule {
+  string name = 1;
+  string type = 2;  // weapon / system / armor / engine / moduleGroup
+  repeated WeaponDef weapons = 3;
+  map<string, string> variants = 4;
+}
+
+// 舰载机槽位
+message AircraftSlots {
+  int32 fighter = 1;
+  int32 corvette = 2;
+}
+
+// 单艘舰船完整数据
+message ShipData {
+  string id = 1;
+  string name = 2;
+  string variant = 3;
+  ShipType type = 4;
+  string size = 5;
+  string position = 6;
+  int64 hp = 7;
+  int32 physical_armor = 8;
+  int32 energy_armor = 9;
+  int32 command_value = 10;
+  int32 service_limit = 11;
+  ShipSpeed speed = 12;
+  ShipRatings ratings = 13;
+  bool is_carrier = 14;
+  AircraftSlots aircraft_slots = 15;
+  repeated ShipModule modules = 16;
+}
+
+// 舰船数据库
+message ShipDatabase {
+  repeated ShipData ships = 1;
+  int32 total_count = 2;
+  string source = 3;
+  int64 generated_at = 4;  // Unix 时间戳
+}
+
+// 舰队配置
+message FleetConfig {
+  string fleet_key = 1;     // ally-escort / enemy-escort 等
+  repeated ShipData main_fleet = 2;
+  repeated ShipData reinforcement = 3;
+  string flagship_id = 4;
+}
+
+// 战斗请求
+message BattleRequest {
+  repeated FleetConfig ally_fleets = 1;
+  repeated FleetConfig enemy_fleets = 2;
+  string battle_mode = 3;  // escort / bomb
+  float bomb_distance = 4;
+}
+
+// 战斗结果
+message BattleResult {
+  string winner = 1;       // ally / enemy / draw
+  float duration = 2;      // 战斗时长（秒）
+  int32 ally_losses = 3;
+  int32 enemy_losses = 4;
+  float total_ally_damage = 5;
+  float total_enemy_damage = 6;
+  repeated string kill_log = 7;
+}
+
+// API 请求/响应
+message AuthRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string token_type = 2;
+  int32 expires_in = 3;
+  string username = 4;
+  int32 platform_tokens = 5;
+}
+
+message ChatRequest {
+  string message = 1;
+  repeated ChatMessage history = 2;
+}
+
+message ChatMessage {
+  string role = 1;    // user / assistant
+  string content = 2;
+}
+
+message ChatResponse {
+  string answer = 1;
+  repeated SourceDoc source_docs = 2;
+  int32 prompt_tokens = 3;
+  int32 completion_tokens = 4;
+  int32 total_tokens = 5;
+  int32 remaining_tokens = 6;
+}
+
+message SourceDoc {
+  string file_name = 1;
+  string snippet = 2;
+}

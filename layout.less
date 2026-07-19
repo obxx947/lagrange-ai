@@ -1,0 +1,117 @@
+// ============================================================
+// 拉格朗日AI — Less 样式：响应式布局
+// 编译：lessc layout.less layout.css
+// ============================================================
+
+// 变量定义
+@bg-primary: #0a0e17;
+@bg-card: #1a1f2e;
+@border-color: #2a3045;
+@accent: #3b8bff;
+@text-primary: #e2e8f0;
+@text-secondary: #94a3b8;
+
+// 断点
+@mobile: 768px;
+@tablet: 1024px;
+@desktop: 1400px;
+
+// 舰船类型颜色
+@type-colors: {
+  battleship: #f0a020;
+  battlecruiser: #e04040;
+  aircraftcarrier: #3b8bff;
+  cruiser: #9060e0;
+  destroyer: #20b870;
+  frigate: #06c8e0;
+  fighter: #f08030;
+  corvette: #60c0c0;
+};
+
+// 网格系统
+.grid-layout(@cols: 3, @gap: 12px) {
+  display: grid;
+  grid-template-columns: repeat(@cols, 1fr);
+  gap: @gap;
+  
+  @media (max-width: @tablet) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: @mobile) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// 舰队布局
+.fleet-layout {
+  .grid-layout(2, 10px);
+}
+
+// 舰船图鉴布局
+.encyclopedia-layout {
+  .grid-layout(4, 8px);
+}
+
+// 卡片mixins
+.card() {
+  background: @bg-card;
+  border: 1px solid @border-color;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: @accent;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+}
+
+// 各类型舰船卡片边框颜色
+each(@type-colors, {
+  .ship-type-@{key} {
+    .card();
+    border-left: 3px solid @value;
+  }
+});
+
+// 按钮变体
+.btn-variant(@bg, @text: #fff) {
+  background: @bg;
+  color: @text;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:hover {
+    filter: brightness(1.15);
+  }
+}
+
+.btn-primary { .btn-variant(@accent); }
+.btn-danger { .btn-variant(#e04040); }
+.btn-success { .btn-variant(#20b870); }
+
+// 响应式表格
+.responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  
+  th, td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid @border-color;
+  }
+  
+  th { color: @accent; font-weight: 600; }
+  td { color: @text-secondary; }
+  
+  @media (max-width: @mobile) {
+    font-size: 11px;
+    th, td { padding: 4px 6px; }
+  }
+}

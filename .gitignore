@@ -1,0 +1,74 @@
+# ============================================================
+# Git 忽略规则
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# 数据库
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# 向量库
+chroma_db/
+*.bin
+
+# 备份
+db_backup/*.db
+
+# 环境变量（密钥在此，不能提交）
+.env
+
+# 导出文件（CSV/TSV可以提交，txt/json导出忽略）
+exports/*.txt
+exports/*.json
+!exports/ships_database.csv
+!exports/ships_database.tsv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+package-lock.json
+
+# 日志
+*.log
+server.log
+
+# 开发工具脚本
+gen_binaries.py
+audit_files.py
+
+# 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 临时文件
+*.tmp
+*.temp
+
+# 但保留这些
+!.env.template
+!exports/.gitkeep
+!chroma_db/.gitkeep
+!db_backup/.gitkeep
+".github/"  

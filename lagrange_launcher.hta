@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>拉格朗日AI — 启动面板</title>
+<hta:application
+  id="lagrangeLauncher"
+  applicationname="拉格朗日AI启动器"
+  border="dialog"
+  borderstyle="normal"
+  caption="yes"
+  contextmenu="no"
+  innerborder="no"
+  maximizebutton="no"
+  minimizebutton="yes"
+  navigable="no"
+  scroll="no"
+  showintaskbar="yes"
+  singleinstance="yes"
+  sysmenu="yes"
+  version="2.0"
+  windowstate="normal"
+/>
+<style>
+  body{font-family:'Microsoft YaHei',sans-serif;background:#0f1624;color:#e8ecf2;margin:0;padding:20px}
+  h1{color:#3b8bff;font-size:18px;margin-bottom:16px}
+  .btn{display:block;width:100%;padding:10px;margin:6px 0;border:none;border-radius:6px;font-size:14px;cursor:pointer;color:#fff;text-align:center}
+  .btn-start{background:linear-gradient(135deg,#3b8bff,#1a5fcf)}
+  .btn-stop{background:#e04040}
+  .btn-info{background:#162032;border:1px solid #1c2a3f}
+  .btn:hover{filter:brightness(1.2)}
+  #status{padding:10px;margin-top:12px;border-radius:6px;font-size:12px;background:#162032;min-height:40px}
+  .running{color:#20b870}.stopped{color:#e04040}
+</style>
+<script language="VBScript">
+  Sub StartServer()
+    Dim shell
+    Set shell = CreateObject("WScript.Shell")
+    shell.CurrentDirectory = Replace(document.location.pathname, "/lagrange_launcher.hta", "")
+    shell.Run "cmd /c set PATH=D:\\Python312;D:\\Python312\\Scripts;%PATH% && python main.py", 2, False
+    document.getElementById("status").innerHTML = "<span class='running'>正在启动服务...</span>"
+    window.setTimeout "CheckStatus()", 3000
+  End Sub
+  
+  Sub StopServer()
+    Dim shell
+    Set shell = CreateObject("WScript.Shell")
+    shell.Run "taskkill /F /IM python.exe", 0, True
+    document.getElementById("status").innerHTML = "<span class='stopped'>服务已停止</span>"
+  End Sub
+  
+  Sub CheckStatus()
+    Dim shell, exec, output
+    Set shell = CreateObject("WScript.Shell")
+    Set exec = shell.Exec("netstat -ano | findstr :3000")
+    output = exec.StdOut.ReadAll()
+    If Len(output) > 0 Then
+      document.getElementById("status").innerHTML = "<span class='running'>✅ 服务运行中 (端口3000)</span><br>访问: http://127.0.0.1:3000"
+    Else
+      document.getElementById("status").innerHTML = "<span class='stopped'>❌ 服务未运行</span>"
+    End If
+  End Sub
+  
+  Sub OpenBrowser()
+    Dim shell
+    Set shell = CreateObject("WScript.Shell")
+    shell.Run "http://127.0.0.1:3000"
+  End Sub
+</script>
+</head>
+<body>
+  <h1>🚀 拉格朗日AI · 启动面板</h1>
+  
+  <button class="btn btn-start" onclick="StartServer()">▶ 启动服务</button>
+  <button class="btn btn-stop" onclick="StopServer()">⏹ 停止服务</button>
+  <button class="btn btn-info" onclick="CheckStatus()">🔄 检查状态</button>
+  <button class="btn btn-info" onclick="OpenBrowser()">🌐 打开网页</button>
+  
+  <div id="status">就绪</div>
+  
+  <script type="text/javascript">
+    window.onload = function(){ CheckStatus(); };
+  </script>
+</body>
+</html>

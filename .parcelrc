@@ -1,0 +1,8 @@
+{
+  "extends": "@parcel/config-default",
+  "transformers": {
+    "*.jsx": ["@parcel/transformer-jsx"],
+    "*.tsx": ["@parcel/transformer-typescript-tsx"]
+  },
+  "reporters": ["...", "parcel-reporter-bundle-analyzer"]
+}

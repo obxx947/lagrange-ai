@@ -1,0 +1,24 @@
+# ============================================================
+# 拉格朗日AI — Fish Shell 配置
+# 用法：source ~/.config/fish/config.fish 或直接 source 此文件
+# ============================================================
+
+# 环境变量
+set -gx LAGRANGE_HOME "$HOME/Desktop/拉格朗日智能体"
+set -gx LAGRANGE_API "http://127.0.0.1:3000"
+
+# 别名
+alias lagrange-start 'cd $LAGRANGE_HOME; python main.py &'
+alias lagrange-stop 'taskkill //F //IM python.exe 2>/dev/null'
+alias lagrange-status 'curl -s $LAGRANGE_API/health; or echo "❌ 服务未运行"'
+alias lagrange-backup 'cd $LAGRANGE_HOME; python -c "from database import backup_database; print(backup_database())"'
+alias lagrange-ships 'curl -s $LAGRANGE_API/api/ships | python -c "import sys,json;print(json.load(sys.stdin)[\"count\"],\"艘舰船\")"'
+
+# Fish 自动补全
+complete -c lagrange-start -f
+complete -c lagrange-stop -f
+
+# 启动提示
+if test -d "$LAGRANGE_HOME"
+    echo "🚀 拉格朗日AI 环境已就绪 | lagrange-start 启动服务"
+end

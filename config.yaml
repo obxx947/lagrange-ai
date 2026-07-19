@@ -1,0 +1,80 @@
+# ============================================================
+# 拉格朗日AI 战术推演中心 — YAML 配置文件
+# 替代 .env 的补充配置，结构化的高级设置
+# ============================================================
+
+# 服务器设置
+server:
+  host: "0.0.0.0"
+  port: 3000
+  workers: 1                     # uvicorn worker数（Windows建议1）
+  log_level: "info"              # debug/info/warning/error
+  reload: false                  # 生产环境关闭热重载
+
+# DeepSeek API
+deepseek:
+  model: "deepseek-chat"
+  temperature: 0.3               # 低温度确保稳定性
+  max_tokens: 2048               # 单次回复上限
+  timeout: 120                   # API超时(秒)
+
+# RAG 知识库
+rag:
+  chunk_size: 500                # 文本块字符数
+  chunk_overlap: 50              # 重叠字符数
+  retrieval_top_k: 5             # 检索返回数
+  max_features: 5000             # TF-IDF最大特征维度
+  embedding_model: "tfidf"       # tfidf / sentence-transformers
+  jieba_dict: null               # 自定义jieba词典路径
+
+# 认证安全
+auth:
+  jwt_expiration_days: 7         # JWT有效期
+  bcrypt_rounds: 12              # bcrypt加密轮数
+  admin_ip_whitelist:            # 管理员IP白名单
+    - "127.0.0.1"
+    - "::1"
+  rate_limit:
+    max_requests: 10             # 每小时最大请求数
+    window_seconds: 3600         # 限流窗口
+
+# 计费
+billing:
+  new_user_tokens: 10000         # 新用户赠送Token
+  super_admin_tokens: 999999999  # 管理员Token
+  recharge_min: 1
+  recharge_max: 1000000
+
+# 数据库
+database:
+  path: "./lagrange.db"
+  backup_dir: "./db_backup"
+  backup_auto_daily: true        # 每日自动备份
+  cleanup:
+    session_days: 7              # 登录日志保留天数
+    chat_days: 14                # 对话记录保留天数
+
+# 文档
+documents:
+  desktop_materials: "C:/Users/Administrator/Desktop/质料"
+  lagrange_docs: "./lagrange_docs"
+  allowed_extensions: [".txt", ".md", ".pdf"]
+  exclude_vectorize: [".html", ".htm"]
+
+# 战斗模拟器
+battle:
+  tuning_coefficient: 1.3        # 调校系数
+  min_damage_ratio: 0.1          # 未穿透保底比例
+  base_crit_rate: 0.15           # 基础暴击率
+  system_damage_chance: 0.10     # 系统破坏概率
+  plutus_reduction: 0.30         # 普卢托斯旗舰减伤
+  max_sim_time: 300              # 最大模拟时间(秒)
+  default_dt: 0.1                # 模拟步长
+
+# 前端
+frontend:
+  theme: "dark"                  # dark / light
+  language: "zh-CN"
+  max_chat_history: 200          # 本地历史上限
+  enable_pwa: true               # PWA离线支持
+  enable_compare: true           # 舰船对比工具

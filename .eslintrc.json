@@ -1,0 +1,27 @@
+{
+  "env": {
+    "browser": true,
+    "es2023": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2024,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "semi": ["warn", "always"],
+    "quotes": ["warn", "single"],
+    "indent": ["warn", 2],
+    "max-len": ["warn", { "code": 120 }]
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "serene/"
+  ]
+}

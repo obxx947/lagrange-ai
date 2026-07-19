@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>舰船对比工具</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { padding: 20px; max-width: 1200px; margin: 0 auto; }
+  .compare-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .compare-col { background: var(--bg-card); border: 1px solid var(--bg-hover); border-radius: var(--radius-lg); padding: 16px; }
+  .compare-col h2 { color: var(--accent); margin-bottom: 12px; font-size: 16px; }
+  .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+  .stat-label { color: var(--text-secondary); }
+  .stat-value { color: var(--text-primary); font-weight: 600; }
+  .stat-value.better { color: var(--green); }
+  .stat-value.worse { color: var(--red); }
+  select { width: 100%; padding: 8px; background: var(--bg-input); border: 1px solid var(--bg-hover); border-radius: var(--radius-md); color: var(--text-primary); margin-bottom: 8px; }
+  .winner { color: var(--gold); font-weight: 700; }
+</style>
+</head>
+<body>
+<h1 style="margin-bottom:16px">⚔ 舰船对比工具</h1>
+
+<div class="flex gap-md mb-sm">
+  <div style="flex:1">
+    <label class="text-sm text-secondary">舰船 A</label>
+    <select id="shipA" onchange="compare()"><option value="">-- 选择舰船 --</option></select>
+  </div>
+  <div style="flex:1">
+    <label class="text-sm text-secondary">舰船 B</label>
+    <select id="shipB" onchange="compare()"><option value="">-- 选择舰船 --</option></select>
+  </div>
+</div>
+
+<div class="compare-container" id="result" style="display:none">
+  <div class="compare-col" id="colA"></div>
+  <div class="compare-col" id="colVs" style="text-align:center;display:flex;flex-direction:column;justify-content:center">
+    <div style="font-size:2rem">⚡VS⚡</div>
+    <div id="winner" style="margin-top:12px"></div>
+  </div>
+  <div class="compare-col" id="colB"></div>
+</div>
+
+<p id="noResult" style="color:var(--text-muted);text-align:center;margin-top:40px">请选择两艘舰船进行对比</p>
+
+<script>
+const API=()=>location.origin;
+let ships=[];
+
+async function init(){
+  try{const d=await fetch(API()+'/api/ships').then(r=>r.json());ships=d.ships||[];renderOptions()}catch(e){}
+}
+function renderOptions(){
+  const opts=ships.map(s=>`<option value="${s.id}">${s.name}${s.variant||''} [${s.type}]</option>`).join('');
+  $('#shipA').innerHTML='<option value="">-- 选择 --</option>'+opts;
+  $('#shipB').innerHTML='<option value="">-- 选择 --</option>'+opts;
+}
+function $(s){return document.querySelector(s)}
+
+function compare(){
+  const aId=$('#shipA').value,bId=$('#shipB').value;
+  if(!aId||!bId)return;
+  const a=ships.find(s=>s.id===aId),b=ships.find(s=>s.id===bId);
+  if(!a||!b)return;
+  
+  const stats=['hp','physicalArmor','energyArmor','commandValue'];
+  const labels={hp:'HP',physicalArmor:'物理装甲',energyArmor:'能量抗性%',commandValue:'指挥值'};
+  
+  function renderCol(ship,other,id){
+    let h='';
+    for(const k of stats){
+      const v=ship[k]||0,ov=other[k]||0;
+      let cls='';
+      if(v>ov)cls='better';else if(v<ov&&k!=='commandValue')cls='worse';else if(v<ov&&k==='commandValue')cls='better';
+      h+=`<div class="stat-row"><span class="stat-label">${labels[k]}</span><span class="stat-value ${cls}">${(v||0).toLocaleString()}</span></div>`;
+    }
+    // Ratings
+    const r=ship.ratings||{};
+    for(const [rk,rv] of Object.entries(r)){
+      const ov2=(other.ratings||{})[rk]||'C';
+      const scores={S:5,A:4,B:3,C:2,D:1};
+      let cls2='';
+      if((scores[rv]||0)>(scores[ov2]||0))cls2='better';
+      else if((scores[rv]||0)<(scores[ov2]||0))cls2='worse';
+      h+=`<div class="stat-row"><span class="stat-label">${rk}</span><span class="stat-value ${cls2}">${rv}</span></div>`;
+    }
+    $(id).innerHTML=h;
+  }
+  
+  renderCol(a,b,'#colA');
+  renderCol(b,a,'#colB');
+  
+  // 评分对比
+  const score=s=>{const r=s.ratings||{};const sc={S:5,A:4,B:3,C:2,D:1};return Object.values(r).reduce((t,v)=>t+(sc[v]||0),0)};
+  const sa=score(a),sb=score(b);
+  if(sa>sb)$('#winner').innerHTML=`<div style="font-size:1.3rem" class="winner">🏆 ${a.name} 综合更强</div>`;
+  else if(sb>sa)$('#winner').innerHTML=`<div style="font-size:1.3rem" class="winner">🏆 ${b.name} 综合更强</div>`;
+  else $('#winner').innerHTML='<div class="text-secondary">实力相当</div>';
+  
+  $('#result').style.display='';$('#noResult').style.display='none';
+}
+
+init();
+</script>
+</body>
+</html>

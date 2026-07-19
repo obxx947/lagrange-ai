@@ -1,0 +1,35 @@
+--- a/config.py
++++ b/config.py
+@@ -1,5 +1,7 @@
+ # -*- coding: utf-8 -*-
+ """
+ 项目配置模块
++-----------
++修复：增加了 Windows 中文路径兼容性处理
+ """
+ 
+ import os
+@@ -15,6 +17,7 @@
+     if env_path.exists():
+         load_dotenv(env_path)
+     else:
++        # .env 不存在时打印警告但不终止
+         print(f"[警告] 未找到 .env 文件")
+
+--- /dev/null
++++ b/game_knowledge.py
+@@ -0,0 +1,200 @@
++# 新增：游戏知识增强模块
++# 从战斗机制.txt 提取结构化游戏知识
+
+--- a/chat_service.py
++++ b/chat_service.py
+@@ -20,15 +20,10 @@
+-from rag_service import search_similar_documents, format_rag_context
++from rag_service import search_similar_documents, format_rag_context
++from game_knowledge import build_enhanced_system_prompt
+
+-SYSTEM_PROMPT = """【系统强制约束】
+-你是仅服务《无尽的拉格朗日》游戏的专业战斗推理智能体...
+-"""
++SYSTEM_PROMPT = build_enhanced_system_prompt()

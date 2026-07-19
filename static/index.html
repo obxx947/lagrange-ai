@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无尽的拉格朗日 · AI战术推演中心 v3</title>
+
+<!-- ====== 外部资源引用 ====== -->
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="stylesheet" href="/static/theme.css">
+
+<meta name="theme-color" content="#3b8bff">
+<meta name="description" content="基于RAG增强检索的拉格朗日专业战斗推演AI智能体">
+</head>
+<body>
+
+<!-- ====== 导航 ====== -->
+<nav id="nav">
+  <span class="logo">🚀 拉格朗日·AI战术中心 v3</span>
+  <span class="nt ac" data-pg="pg-chat">💬 AI对话</span>
+  <span class="nt" data-pg="pg-fleet">⚔ 舰队配队</span>
+  <span class="nt" data-pg="pg-battle">🔥 战斗模拟</span>
+  <span class="nt" data-pg="pg-enc">📚 舰船图鉴</span>
+  <span class="nt" data-pg="pg-compare">⚖ 舰船对比</span>
+  <span class="nt" data-pg="pg-recharge">💳 充值</span>
+  <span class="nt admin-only" data-pg="pg-admin">🔧 管理</span>
+  <span class="nt" data-pg="pg-tools">🛠 工具</span>
+  <div class="nr">
+    <span class="badge gold" id="td">💰 ---</span>
+    <span id="ud" style="font-size:10px;color:var(--t2)">未登录</span>
+    <button class="bs" id="bl" onclick="showModal('ml')">登录</button>
+    <button class="bs" id="br" onclick="showModal('mr')">注册</button>
+    <button class="bs dg" id="bq" onclick="doLogout()" style="display:none">退出</button>
+  </div>
+</nav>
+
+<div id="main">
+<!-- AI对话 -->
+<div class="pg ac" id="pg-chat">
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="cm"></div>
+    <div class="chat-in">
+      <textarea id="ci" placeholder="输入问题..." disabled></textarea>
+      <button class="bp" id="bsend" onclick="sendChat()" disabled>发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- 舰队配队 -->
+<div class="pg" id="pg-fleet">
+  <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+    <button class="bp" onclick="saveFleet()">💾 保存编队</button>
+    <button class="bs" onclick="loadFleetList()">📂 读取存档</button>
+    <button class="bs" onclick="recommendFleet()">🤖 AI推荐编队</button>
+    <span style="font-size:10px;color:var(--t2)" id="fsh">登录后可保存</span>
+  </div>
+  <div class="fg" id="fg"></div>
+  <div class="slib"><div class="cf" id="cf"></div><input type="text" id="ss" placeholder="🔍 搜索169艘舰船..." oninput="renderShipLib()"><div class="sg" id="sg"></div></div>
+</div>
+
+<!-- 战斗模拟 -->
+<div class="pg" id="pg-battle">
+  <div class="bc">
+    <button class="bp" onclick="startBattle()">▶ 模拟</button>
+    <button class="bs" onclick="pauseBattle()">⏸</button>
+    <button class="bs" onclick="resetBattle()">🔄</button>
+    <select id="spd" onchange="ST.spd=parseInt(this.value)" style="background:var(--b0);color:var(--t0);border:1px solid var(--b3);border-radius:3px;padding:2px 4px;font-size:11px">
+      <option value="1">1x</option><option value="5" selected>5x</option><option value="10">10x</option>
+    </select>
+    <span id="stm" style="color:var(--cy);font-size:11px;margin-left:auto">⏱ 0.0s</span>
+    <button class="bp" onclick="aiAnalyze()" style="background:linear-gradient(135deg,var(--pp),var(--ac))">🤖 AI分析</button>
+    <button class="bs" onclick="exportBattleReport()">📄 导出报告</button>
+  </div>
+  <div class="btl"><div class="btc ally" id="ba"><h3>🔵 己方舰队</h3><div id="bas"></div></div><div class="btc enemy" id="be"><h3>🔴 敌方舰队</h3><div id="bes"></div></div></div>
+  <div class="blog" id="blog"><b>📋 战斗日志</b><br>配置舰队后点击「模拟」...</div>
+</div>
+
+<!-- 舰船图鉴 -->
+<div class="pg" id="pg-enc">
+  <div class="cf" id="ecf" style="margin-bottom:6px"></div>
+  <div style="margin-bottom:8px;display:flex;gap:6px">
+    <input type="text" id="enc-search" placeholder="🔍 搜索..." style="flex:1;background:var(--b0);border:1px solid var(--b3);border-radius:var(--br);color:var(--t0);padding:6px 10px;font-size:11px" oninput="renderEnc()">
+    <button class="bs" onclick="exportShipsCSV()">📥 导出CSV</button>
+  </div>
+  <div class="encg" id="eg"></div>
+</div>
+
+<!-- 舰船对比 (内嵌iframe) -->
+<div class="pg" id="pg-compare" style="height:calc(100vh - 140px)">
+  <iframe src="/static/compare_ships.html" style="width:100%;height:100%;border:none;border-radius:var(--br2)"></iframe>
+</div>
+
+<!-- 充值 -->
+<div class="pg" id="pg-recharge">
+  <div class="card" style="max-width:600px">
+    <h2 style="color:var(--ac);margin-bottom:8px">💳 Token充值说明</h2>
+    <p class="text-secondary text-sm">人工充值模式。新用户注册赠10,000 Token。</p>
+    <p class="text-secondary text-sm mt-sm">联系本机管理员→告知用户名+Token数量→后台充值→即时到账。</p>
+    <p class="text-gold text-sm mt-sm"><b>🎁 注册即赠10,000免费Token</b></p>
+  </div>
+</div>
+
+<!-- 管理 -->
+<div class="pg" id="pg-admin">
+  <div class="card" style="max-width:600px">
+    <h2 style="color:var(--ac)">🔧 管理员后台</h2>
+    <p class="text-red text-xs">⚠ 仅限本机(127.0.0.1)</p>
+    <div id="aa">
+      <div class="fg2"><label>管理员密码</label><input type="password" id="apw"></div>
+      <button class="bp" onclick="adminLogin()">登录</button>
+      <div class="err" id="ale"></div>
+    </div>
+    <div id="apc" style="display:none">
+      <hr style="border-color:var(--b3);margin:10px 0">
+      <h3 class="text-gold" style="margin-bottom:6px">💰 充值</h3>
+      <div class="fg2"><label>目标用户名</label><input type="text" id="run"></div>
+      <div class="fg2"><label>Token数量</label><input type="number" id="ram" min="1"></div>
+      <button class="bp" onclick="doRecharge()">确认充值</button>
+      <div id="rres" style="margin-top:5px"></div>
+      <hr style="border-color:var(--b3);margin:10px 0">
+      <button class="bs" onclick="loadLogs()">📋 日志</button>
+      <button class="bs" onclick="doBackup()">💾 备份</button>
+      <button class="bs" onclick="doCleanup()">🧹 清理</button>
+      <button class="bs" onclick="rebuildIndex()">🔄 重建索引</button>
+      <div id="rlogs" style="max-height:200px;overflow-y:auto;margin-top:6px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 工具页 -->
+<div class="pg" id="pg-tools">
+  <div class="card" style="max-width:700px">
+    <h2 class="text-accent">🛠 工具集</h2>
+    <div class="grid-2" style="margin-top:12px">
+      <a href="/static/compare_ships.html" target="_blank" class="card" style="text-decoration:none;color:var(--t0);text-align:center">
+        <div style="font-size:2rem">⚖</div><div>舰船对比工具</div>
+      </a>
+      <a href="/serene/" target="_blank" class="card" style="text-decoration:none;color:var(--t0);text-align:center">
+        <div style="font-size:2rem">🌌</div><div>星港指挥中心</div>
+      </a>
+      <a href="/docs" target="_blank" class="card" style="text-decoration:none;color:var(--t0);text-align:center">
+        <div style="font-size:2rem">📖</div><div>API文档 (Swagger)</div>
+      </a>
+      <a href="/exports/ships_database.csv" target="_blank" class="card" style="text-decoration:none;color:var(--t0);text-align:center">
+        <div style="font-size:2rem">📥</div><div>舰船数据CSV</div>
+      </a>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ====== 弹窗 ====== -->
+<div class="mo" id="ml"><div class="mb">
+  <button class="cls" onclick="closeMo('ml')">&times;</button><h2>🔑 登录</h2>
+  <div class="fg2"><label>用户名</label><input type="text" id="lun"></div>
+  <div class="fg2"><label>密码</label><input type="password" id="lpw"></div>
+  <button class="bp" onclick="doLogin()" style="width:100%">登录</button><div class="err" id="le"></div>
+  <p class="text-xs text-muted" style="margin-top:8px;text-align:center">没账号？<a href="#" onclick="closeMo('ml');showModal('mr')" class="text-accent">注册</a></p>
+</div></div>
+
+<div class="mo" id="mr"><div class="mb">
+  <button class="cls" onclick="closeMo('mr')">&times;</button><h2>📝 注册</h2>
+  <div class="fg2"><label>用户名</label><input type="text" id="run2"></div>
+  <div class="fg2"><label>密码</label><input type="password" id="rpw"></div>
+  <div class="fg2"><label>确认密码</label><input type="password" id="rpw2"></div>
+  <button class="bp" onclick="doRegister()" style="width:100%">注册（赠10,000 Token）</button><div class="err" id="re"></div>
+</div></div>
+
+<div class="mo" id="me"><div class="mb">
+  <button class="cls" onclick="closeMo('me')">&times;</button><h2 id="met">⚠ 提示</h2><p id="mem" class="text-secondary text-sm"></p>
+  <button class="bp" onclick="closeMo('me')" style="margin-top:8px">确定</button>
+</div></div>
+
+<div class="mo" id="msl"><div class="mb" style="max-width:480px">
+  <button class="cls" onclick="closeMo('msl')">&times;</button><h2>📂 我的存档</h2><div id="slc" style="max-height:300px;overflow-y:auto"></div>
+</div></div>
+
+<div id="toast"></div>
+
+<footer>
+  <b>📜 免责声明</b>：玩家社区自制工具，与网易及游戏官方无关。<b>🔒 隐私</b>：仅采集用户名密码，bcrypt加密。对话14天自动清理。<br>
+  © 无尽的拉格朗日 AI战术推演中心 v3
+</footer>
+
+<!-- ====== JavaScript ====== -->
+<script src="/static/admin_dashboard.js"></script>
+<script>
+// ============= 全局状态 =============
+const ST={token:localStorage.lt||'',user:JSON.parse(localStorage.lu||'null'),ships:[],fleets:{'ally-escort':{main:[]},'ally-escorted':{main:[]},'enemy-escort':{main:[]},'enemy-escorted':{main:[]},'bomb-fleet':{main:[]}},cfKey:'ally-escort',chat:JSON.parse(localStorage.lch||'[]'),bs:null,btimer:null,spd:5,paused:false,scf:'all',isAdmin:false,aToken:''};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s),API=()=>location.origin;
+async function api(p,o={}){const h={'Content-Type':'application/json'};if(ST.token&&!o.na)h.Authorization='Bearer '+ST.token;try{const r=await fetch(API()+p,{...o,headers:{...h,...o.headers}});if(!r.ok){const e=await r.json().catch(()=>({detail:`失败(${r.status})`}));if(r.status===401){doLogout();throw new Error('登录过期')}if(r.status===402){showMoErr('余额不足',e.detail);throw new Error(e.detail)}if(r.status===429){showMoErr('限流',e.detail);throw new Error(e.detail)}throw new Error(e.detail)}return await r.json()}catch(e){if(e.message.includes('fetch')||e.message.includes('Network'))showMoErr('网络错误','无法连接服务器');throw e}}
+function toast(m,t='i'){const el=$('#toast');el.textContent=m;el.className='show '+t;setTimeout(()=>el.classList.remove('show'),2500)}
+function showModal(id){$('#'+id).classList.add('show')}function closeMo(id){$('#'+id).classList.remove('show')}
+function showMoErr(t,m){$('#met').textContent=t;$('#mem').textContent=m;showModal('me')}function showLogin(){closeMo('mr');showModal('ml')}
+function updUI(){const li=!!ST.user;$('#ud').textContent=li?ST.user.username:'未登录';$('#td').textContent=li?`💰 ${(ST.user.platform_tokens||0).toLocaleString()}`:'💰 ---';$('#bl').style.display=li?'none':'';$('#br').style.display=li?'none':'';$('#bq').style.display=li?'':'none';$('#ci').disabled=!li;$('#bsend').disabled=!li;$('#fsh').textContent=li?'✓ 已登录':'⚠ 登录后可保存';if(location.hostname==='127.0.0.1'||location.hostname==='localhost')$$('.admin-only').forEach(e=>e.style.display='')}
+// 认证
+async function doLogin(){const u=$('#lun').value.trim(),p=$('#lpw').value.trim();if(!u||!p){$('#le').textContent='请填写完整';return}try{const d=await api('/api/login',{method:'POST',body:JSON.stringify({username:u,password:p}),na:true});ST.token=d.access_token;ST.user={username:d.username,platform_tokens:d.platform_tokens};localStorage.lt=ST.token;localStorage.lu=JSON.stringify(ST.user);closeMo('ml');updUI();toast('登录成功！','s');loadFleetList()}catch(e){$('#le').textContent=e.message}}
+async function doRegister(){const u=$('#run2').value.trim(),p=$('#rpw').value.trim(),p2=$('#rpw2').value.trim();if(!u||!p){$('#re').textContent='请填写完整';return}if(p!==p2){$('#re').textContent='密码不一致';return}if(u.length<2||p.length<4){$('#re').textContent='用户名≥2字符，密码≥4字符';return}try{const d=await api('/api/register',{method:'POST',body:JSON.stringify({username:u,password:p}),na:true});ST.token=d.access_token;ST.user={username:d.username,platform_tokens:d.platform_tokens};localStorage.lt=ST.token;localStorage.lu=JSON.stringify(ST.user);closeMo('mr');updUI();toast('注册成功！赠10,000 Token 🎉','s')}catch(e){$('#re').textContent=e.message}}
+function doLogout(){ST.token='';ST.user=null;delete localStorage.lt;delete localStorage.lu;updUI();toast('已退出')}
+
+// ============= 初始化 =============
+(async function(){
+  if(ST.token&&ST.user){try{const d=await api('/api/user/me');ST.user.platform_tokens=d.platform_tokens;localStorage.lu=JSON.stringify(ST.user)}catch(e){doLogout()}}
+  updUI();await loadShips();renderChat();
+  // 注册Service Worker (PWA)
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('/static/service_worker.js').then(()=>console.log('[SW] 已注册')).catch(()=>{})}
+})();
+
+// ============= 导航 =============
+$$('.nt').forEach(t=>t.addEventListener('click',function(){const pg=this.dataset.pg;$$('.pg').forEach(p=>p.classList.remove('ac'));$$('.nt').forEach(n=>n.classList.remove('ac'));document.getElementById(pg)?.classList.add('ac');this.classList.add('ac');if(pg==='pg-fleet')renderFleet();if(pg==='pg-enc')renderEnc();if(pg==='pg-battle')prepBattle()}));
+
+// ============= 舰船数据 =============
+async function loadShips(){try{const d=await api('/api/ships',{na:true});ST.ships=d.ships||[];console.log('舰船:'+ST.ships.length+'艘')}catch(e){ST.ships=[]}renderShipLib();renderFleet()}
+const CATS=[{k:'all',l:'全部'},{k:'battleship',l:'战列舰'},{k:'battlecruiser',l:'战巡'},{k:'aircraftcarrier',l:'航母'},{k:'support',l:'支援'},{k:'cruiser',l:'巡洋舰'},{k:'destroyer',l:'驱逐舰'},{k:'frigate',l:'护卫舰'},{k:'fighter',l:'战机'},{k:'corvette',l:'护航艇'}];
+const TYPES={battleship:'战列舰',battlecruiser:'战巡',aircraftcarrier:'航母',support:'支援舰',cruiser:'巡洋舰',destroyer:'驱逐舰',frigate:'护卫舰',fighter:'战机',corvette:'护航艇'};
+const RATINGSL={antiShip:'对舰',antiAir:'防空',siege:'攻城',survival:'生存',strategy:'战略'};
+function renderFleet(){const names={'ally-escort':['🔵 己方护航','ally'],'ally-escorted':['🔵 己方被护航','ally'],'enemy-escort':['🔴 敌方护航','enemy'],'enemy-escorted':['🔴 敌方被护航','enemy'],'bomb-fleet':['💣 轰炸编队','']};$('#fg').innerHTML=Object.entries(names).map(([k,v])=>{const f=ST.fleets[k]||{main:[]};const total=(f.main||[]).reduce((s,sh)=>s+(sh.count||1),0);const chips=(f.main||[]).map(s=>`<span class="sc" onclick="event.stopPropagation();rmFleet('${k}','${s.id}')">${s.name} x${s.count||1} ✕</span>`).join('');return`<div class="fp ${v[1]}" onclick="ST.cfKey='${k}';renderShipLib();renderFleet()"><h3>${v[0]} (${total}艘)</h3>${chips||'<div class="eh">点击选择此舰队</div>'}</div>`}).join('');renderShipLib()}
+function renderShipLib(){$('#cf').innerHTML=CATS.map(c=>`<span class="cb${ST.scf===c.k?' ac':''}" onclick="ST.scf='${c.k}';renderShipLib()">${c.l}</span>`).join('');const s=($('#ss')?.value||'').toLowerCase();let ships=ST.ships;if(ST.scf!=='all')ships=ships.filter(sh=>sh.type===ST.scf);if(s)ships=ships.filter(sh=>sh.name.toLowerCase().includes(s)||(sh.variant||'').toLowerCase().includes(s));$('#sg').innerHTML=ships.slice(0,200).map(sh=>{const r=sh.ratings||{};const rs=Object.entries(r).map(([k,v])=>`<span class="rt ${v}">${RATINGSL[k]||k} ${v}</span>`).join('');return`<div class="ship-card" onclick="addFleet('${sh.id}')"><div class="sn">${sh.name} ${sh.variant||''}</div><div class="st">${TYPES[sh.type]||sh.type} | HP:${(sh.hp||0).toLocaleString()} | 指挥:${sh.commandValue||0}</div><div class="ss">${rs}</div></div>`}).join('')||'<div style="color:var(--t2);text-align:center;padding:20px;grid-column:1/-1">无匹配舰船</div>'}
+function addFleet(id){const sh=ST.ships.find(s=>s.id===id);if(!sh)return;const f=ST.fleets[ST.cfKey];if(!f)return;const ex=f.main.find(s=>s.id===id);if(ex)ex.count=(ex.count||1)+1;else f.main.push({...sh,count:1});renderFleet();saveLocal()}
+function rmFleet(fk,id){const f=ST.fleets[fk];if(!f)return;const i=f.main.findIndex(s=>s.id===id);if(i>=0){if(f.main[i].count>1)f.main[i].count--;else f.main.splice(i,1)}renderFleet();saveLocal()}
+function saveLocal(){localStorage.lfd=JSON.stringify(ST.fleets)}
+try{const d=JSON.parse(localStorage.lfd||'null');if(d)ST.fleets={...ST.fleets,...d}}catch(e){}
+
+// ============= AI推荐编队 =============
+async function recommendFleet(){if(!ST.user){showLogin();return}try{toast('AI推荐中...','i');const d=await api('/api/fleet/recommend',{method:'POST',body:JSON.stringify({max_cv:500})});if(d.tanks)toast(`推荐完成：${d.tanks.length+d.dps_ships.length}艘`,'s')}catch(e){toast('推荐失败：'+e.message,'e')}}
+
+// ============= 存档 CRUD =============
+async function saveFleet(){if(!ST.user){showLogin();return}const n=prompt('存档名称：','编队 '+new Date().toLocaleDateString());if(!n)return;try{await api('/api/simulator/save',{method:'POST',body:JSON.stringify({save_name:n,fleet_config:ST.fleets})});toast('保存成功','s')}catch(e){toast(e.message,'e')}}
+async function loadFleetList(){if(!ST.user)return;try{const d=await api('/api/simulator/saves');const svs=d.saves||[];$('#slc').innerHTML=svs.length===0?'<p style="color:var(--t2);text-align:center">暂无存档</p>':svs.map(s=>`<div class="card" style="padding:7px;margin:3px 0;display:flex;justify-content:space-between;align-items:center"><div><b>${s.save_name}</b><br><small class="text-muted">${s.updated_at}</small></div><div><button class="bs" onclick="loadSave(${s.id})">读取</button> <button class="bs dg" onclick="delSave(${s.id})">删除</button></div></div>`).join('');showModal('msl')}catch(e){toast('加载失败','e')}}
+async function loadSave(id){try{const d=await api('/api/simulator/saves');const s=(d.saves||[]).find(sv=>sv.id===id);if(s){ST.fleets=s.fleet_config;saveLocal();renderFleet();closeMo('msl');toast('已加载','s')}}catch(e){toast(e.message,'e')}}
+async function delSave(id){if(!confirm('确定删除？'))return;try{await api('/api/simulator/save/'+id,{method:'DELETE'});toast('已删除','s');loadFleetList()}catch(e){toast(e.message,'e')}}
+
+// ============= AI 对话 =============
+function renderChat(){$('#cm').innerHTML=ST.chat.length===0?'<div class="msg a">👋 欢迎！基于169艘舰船+游戏机制资料提供专业分析。<br><small>外部资源: theme.css | service_worker.js | admin_dashboard.js 已加载</small></div>':ST.chat.map(m=>{let h=m.content.replace(/\n/g,'<br>');if(m.sourceDocs&&m.sourceDocs.length)h+=`<div class="src"><b>📚 资料来源：</b><br>${m.sourceDocs.map(d=>`· ${d.file_name}: ${d.snippet}`).join('<br>')}</div>`;if(m.tokens)h+=`<div style="font-size:9px;color:var(--t2);margin-top:2px">消耗 ${m.tokens} Token</div>`;return`<div class="msg ${m.role==='user'?'u':'a'}">${h}</div>`}).join('');$('#cm').scrollTop=$('#cm').scrollHeight}
+async function sendChat(){const m=$('#ci').value.trim();if(!m||!ST.user){if(!ST.user)showLogin();return}ST.chat.push({role:'user',content:m});savChat();renderChat();$('#ci').value='';$('#bsend').disabled=true;const ld=document.createElement('div');ld.className='msg a';ld.textContent='⏳ 检索资料库...';ld.id='ld';$('#cm').appendChild(ld);try{const hist=ST.chat.slice(-21,-1).filter((_,i)=>i%2===0).map((x,i)=>({role:'user',content:x.content}));const d=await api('/api/chat',{method:'POST',body:JSON.stringify({message:m,history:hist})});document.getElementById('ld')?.remove();ST.chat.push({role:'ai',content:d.answer,sourceDocs:d.source_docs,tokens:d.total_tokens});savChat();renderChat();if(ST.user){ST.user.platform_tokens=d.platform_tokens_remaining;localStorage.lu=JSON.stringify(ST.user)}updUI()}catch(e){document.getElementById('ld')?.remove();ST.chat.push({role:'ai',content:'❌ '+e.message});savChat();renderChat()}$('#bsend').disabled=false}
+function savChat(){if(ST.chat.length>200)ST.chat=ST.chat.slice(-200);localStorage.lch=JSON.stringify(ST.chat)}
+$('#ci').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});
+document.addEventListener('click',e=>{if(e.target.classList.contains('mo'))e.target.classList.remove('show')});
+
+// ============= 战斗模拟 =============
+function prepBattle(){const ally=[],enemy=[];['ally-escort','ally-escorted'].forEach(k=>{const f=ST.fleets[k];if(f&&f.main)ally.push(...f.main)});['enemy-escort','enemy-escorted'].forEach(k=>{const f=ST.fleets[k];if(f&&f.main)enemy.push(...f.main)});$('#bas').innerHTML=renderSimShips(ally);$('#bes').innerHTML=renderSimShips(enemy)}
+function renderSimShips(ships){if(!ships||ships.length===0)return'<p class="text-muted text-sm">无舰船（请先在舰队配队中添加）</p>';return ships.map(s=>{const hp=s.hp||10000;return`<div style="margin-bottom:2px"><div class="flex justify-between text-xs"><span>${s.name} x${s.count||1}</span><span class="text-muted">HP:${hp.toLocaleString()}</span></div><div class="hpbar"><div class="hpfill g" style="width:100%"></div></div></div>`}).join('')}
+function startBattle(){resetBattle();const ally=[],enemy=[];['ally-escort','ally-escorted'].forEach(k=>{const f=ST.fleets[k];if(f&&f.main)f.main.forEach(s=>{for(let i=0;i<(s.count||1);i++)ally.push({...s,side:'ally',cHp:s.hp||10000,mHp:s.hp||10000,alive:true})})});['enemy-escort','enemy-escorted'].forEach(k=>{const f=ST.fleets[k];if(f&&f.main)f.main.forEach(s=>{for(let i=0;i<(s.count||1);i++)enemy.push({...s,side:'enemy',cHp:s.hp||10000,mHp:s.hp||10000,alive:true})})});if(ally.length===0||enemy.length===0){toast('双方都需要舰船','e');return}ST.bs={allyShips:ally,enemyShips:enemy,time:0,logs:[`⚔ 战斗开始！己方${ally.length}艘 vs 敌方${enemy.length}艘`],ended:false};ST.paused=false;runLoop()}
+function runLoop(){if(ST.btimer)clearTimeout(ST.btimer);if(ST.paused||!ST.bs||ST.bs.ended)return;const dt=0.1*ST.spd;tick(dt);renderBattle();if(!ST.bs.ended)ST.btimer=setTimeout(runLoop,100/ST.spd)}
+function tick(dt){const bs=ST.bs;bs.time+=dt;const aA=bs.allyShips.filter(s=>s.alive),aE=bs.enemyShips.filter(s=>s.alive);if(aA.length===0){bs.ended=true;bs.logs.push(`💀 己方全灭！敌方胜利 (${bs.time.toFixed(1)}s)`);return}if(aE.length===0){bs.ended=true;bs.logs.push(`🏆 敌方全灭！己方胜利 (${bs.time.toFixed(1)}s)`);return}const baseDps=400;aA.forEach(ship=>{const t=aE[Math.floor(Math.random()*aE.length)];const raw=baseDps*dt*(0.6+Math.random()*0.8);const ar=Math.max(0.1,(t.physicalArmor||0)/200);const sr=1-(t.energyArmor||0)/100;const dmg=raw*sr*(1-ar);t.cHp-=dmg;if(t.cHp<=0){t.cHp=0;t.alive=false;bs.logs.push(`[${bs.time.toFixed(1)}s] ${ship.name} 击毁 ${t.name}`)}});aE.forEach(ship=>{const t=aA[Math.floor(Math.random()*aA.length)];const raw=baseDps*dt*(0.6+Math.random()*0.8);const ar=Math.max(0.1,(t.physicalArmor||0)/200);const sr=1-(t.energyArmor||0)/100;const dmg=raw*sr*(1-ar);t.cHp-=dmg;if(t.cHp<=0){t.cHp=0;t.alive=false;bs.logs.push(`[${bs.time.toFixed(1)}s] ${ship.name} 击毁 ${t.name}`)}})}
+function renderBattle(){const bs=ST.bs;if(!bs)return;$('#stm').textContent=`⏱ ${bs.time.toFixed(1)}s`;$('#bas').innerHTML=bs.allyShips.map(s=>{const pct=Math.max(0,s.cHp/s.mHp*100);const c=pct>60?'g':pct>25?'y':'r';return`<div style="margin-bottom:2px"><div class="flex justify-between text-xs"><span>${s.name}${s.alive?'':' 💀'}</span><span>${Math.floor(s.cHp).toLocaleString()}/${s.mHp.toLocaleString()}</span></div><div class="hpbar"><div class="hpfill ${c}" style="width:${pct}%"></div></div></div>`}).join('');$('#bes').innerHTML=bs.enemyShips.map(s=>{const pct=Math.max(0,s.cHp/s.mHp*100);const c=pct>60?'g':pct>25?'y':'r';return`<div style="margin-bottom:2px"><div class="flex justify-between text-xs"><span>${s.name}${s.alive?'':' 💀'}</span><span>${Math.floor(s.cHp).toLocaleString()}/${s.mHp.toLocaleString()}</span></div><div class="hpbar"><div class="hpfill ${c}" style="width:${pct}%"></div></div></div>`}).join('');const log=$('#blog');log.innerHTML='<b>📋 战斗日志</b><br>'+bs.logs.slice(-30).join('<br>');log.scrollTop=log.scrollHeight}
+function pauseBattle(){ST.paused=!ST.paused;if(!ST.paused)runLoop();toast(ST.paused?'已暂停':'继续中')}
+function resetBattle(){if(ST.btimer)clearTimeout(ST.btimer);ST.bs=null;ST.paused=false;$('#stm').textContent='⏱ 0.0s';$('#blog').innerHTML='<b>📋 战斗日志</b><br>配置舰队后点击「模拟」...';prepBattle()}
+async function aiAnalyze(){if(!ST.user){showLogin();return}try{toast('AI分析中...','i');const d=await api('/api/simulator/analyze',{method:'POST',body:JSON.stringify({fleet_config:ST.fleets,battle_mode:'escort'})});$('#blog').innerHTML=`<b>🤖 AI战术分析</b><br>${d.analysis.replace(/\n/g,'<br>')}`;if(ST.user){ST.user.platform_tokens=d.platform_tokens_remaining;localStorage.lu=JSON.stringify(ST.user)}updUI();toast(`消耗 ${d.total_tokens} Token`,'s')}catch(e){toast('分析失败：'+e.message,'e')}}
+function exportBattleReport(){if(!ST.bs){toast('请先进行战斗模拟','e');return}const txt=ST.bs.logs.join('\n');const blob=new Blob([txt],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='battle_report_'+new Date().toISOString().slice(0,10)+'.txt';a.click();toast('报告已导出','s')}
+
+// ============= 图鉴 =============
+function renderEnc(){$('#ecf').innerHTML=CATS.map(c=>`<span class="cb${ST.scf===c.k?' ac':''}" onclick="ST.scf='${c.k}';renderEnc()">${c.l}</span>`).join('');const q=($('#enc-search')?.value||'').toLowerCase();let ships=ST.ships;if(ST.scf!=='all')ships=ships.filter(s=>s.type===ST.scf);if(q)ships=ships.filter(s=>s.name.toLowerCase().includes(q)||(s.variant||'').toLowerCase().includes(q));$('#eg').innerHTML=ships.map(s=>{const r=s.ratings||{};const rs=Object.entries(r).map(([k,v])=>`<span class="rt ${v}">${RATINGSL[k]||k} ${v}</span>`).join('');const mods=s.modules?Object.keys(s.modules).length:0;return`<div class="ship-card"><div class="sn">${s.name} ${s.variant||''}</div><div class="st">${TYPES[s.type]||s.type} | CV:${s.commandValue||0} | HP:${(s.hp||0).toLocaleString()} | 模块:${mods}</div><div class="ss">装甲:${s.physicalArmor||0} | 护盾:${s.energyArmor||0}% | 巡航:${s.speed?.cruise||0}</div><div>${rs}</div></div>`}).join('')}
+function exportShipsCSV(){const csv=['id,name,type,hp,armor,shield,cv,cruise,antiShip,antiAir,siege,survival,strategy'];ST.ships.forEach(s=>{const r=s.ratings||{};csv.push([s.id,s.name+s.variant,s.type,s.hp,s.physicalArmor,s.energyArmor,s.commandValue,s.speed?.cruise||0,r.antiShip||'',r.antiAir||'',r.siege||'',r.survival||'',r.strategy||''].join(','))});const blob=new Blob(['\uFEFF'+csv.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lagrange_ships.csv';a.click();toast('CSV已导出','s')}
+
+// ============= 管理员 =============
+async function adminLogin(){const pw=$('#apw').value.trim();if(!pw){$('#ale').textContent='请输入密码';return}try{const d=await api('/api/admin/login',{method:'POST',body:JSON.stringify({password:pw}),na:true});ST.isAdmin=true;ST.aToken=d.access_token;$('#aa').style.display='none';$('#apc').style.display='';loadLogs();toast('管理员登录成功','s')}catch(e){$('#ale').textContent=e.message}}
+async function doRecharge(){const u=$('#run').value.trim(),a=parseInt($('#ram').value);if(!u||!a||a<=0){$('#rres').innerHTML='<span class="err">填写完整</span>';return}try{const r=await fetch(API()+'/api/admin/recharge',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+ST.aToken},body:JSON.stringify({target_username:u,amount:a})});const d=await r.json();if(!r.ok)throw new Error(d.detail);$('#rres').innerHTML=`<span class="suc">${d.message||'充值成功'}</span>`;$('#ram').value='';loadLogs()}catch(e){$('#rres').innerHTML=`<span class="err">${e.message}</span>`}}
+async function loadLogs(){if(!ST.isAdmin)return;try{const r=await fetch(API()+'/api/admin/logs',{headers:{Authorization:'Bearer '+ST.aToken}});const d=await r.json();const logs=d.logs||[];$('#rlogs').innerHTML=logs.length===0?'<p class="text-muted">暂无记录</p>':`<table><tr><th>ID</th><th>管理员</th><th>目标</th><th>数量</th><th>时间</th></tr>${logs.map(l=>`<tr><td>${l.id}</td><td>${l.admin_name}</td><td>${l.target_name}</td><td class="text-gold">+${l.amount}</td><td>${l.created_at}</td></tr>`).join('')}</table>`}catch(e){$('#rlogs').innerHTML='<span class="err">加载失败</span>'}}
+async function doBackup(){if(!confirm('确定备份数据库？'))return;try{const r=await fetch(API()+'/api/admin/backup',{method:'POST',headers:{Authorization:'Bearer '+ST.aToken}});const d=await r.json();toast(d.message||'备份成功','s')}catch(e){toast('备份失败','e')}}
+async function doCleanup(){if(!confirm('确定清理过期数据？'))return;try{const r=await fetch(API()+'/api/admin/cleanup',{method:'POST',headers:{Authorization:'Bearer '+ST.aToken}});const d=await r.json();toast(d.message||'清理完成','s')}catch(e){toast('清理失败','e')}}
+async function rebuildIndex(){try{const d=await api('/api/rebuild-index',{method:'POST',na:true});toast(d.message||'重建完成','s')}catch(e){toast('重建失败','e')}}
+</script>
+</body>
+</html>

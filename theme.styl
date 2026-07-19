@@ -1,0 +1,103 @@
+// ============================================================
+// 拉格朗日AI — Stylus CSS 预处理器
+// 编译：stylus theme.styl -o theme.css
+// ============================================================
+
+// 深空配色
+$bg-deep = #080c14
+$bg-card = #162032
+$accent = #3b8bff
+$cyan = #06c8e0
+$gold = #f0a020
+$red = #e04040
+$green = #20b870
+
+// 舰船类型颜色映射
+$ship-colors = {
+  battleship: #f0a020,
+  battlecruiser: #e04040,
+  aircraftcarrier: #3b8bff,
+  cruiser: #9060e0,
+  destroyer: #20b870,
+  frigate: #06c8e0,
+  fighter: #f08030,
+  corvette: #60c0c0
+}
+
+// Mixin: 卡片
+card($border = #2a3045)
+  background $bg-card
+  border 1px solid $border
+  border-radius 8px
+  padding 12px
+  transition all .2s ease
+  &:hover
+    border-color $accent
+    transform translateY(-2px)
+
+// Mixin: 渐变按钮
+gradient-btn($from = $accent, $to = darken($accent, 30%))
+  background linear-gradient(135deg, $from, $to)
+  color #fff
+  border none
+  padding 10px 20px
+  border-radius 6px
+  font-weight 600
+  cursor pointer
+  &:hover
+    transform translateY(-1px)
+    box-shadow 0 4px 16px rgba($from, .3)
+
+// 生成评级样式
+for $grade, $color in {S: $gold, A: #9060e0, B: $accent, C: #607590, D: $red}
+  .rating-{$grade}
+    background $color
+    color $grade == 'S' ? #000 : #fff
+    display inline-block
+    padding 1px 6px
+    border-radius 3px
+    font-size 10px
+    font-weight 700
+
+// 生成舰船类型边框
+for $type, $color in $ship-colors
+  .ship-{$type}
+    card($color)
+    border-left 3px solid $color
+
+// 舰船卡片
+.ship-card
+  card()
+  cursor pointer
+  .ship-name
+    font-weight 600
+    font-size 13px
+  .ship-type
+    font-size 11px
+    color #607590
+  .ship-hp
+    font-size 11px
+    margin-top 4px
+
+// HP条动画
+.hp-bar
+  height 4px
+  background #2a3045
+  border-radius 2px
+  overflow hidden
+  .fill
+    height 100%
+    transition width .3s
+    &.high
+      background $green
+    &.mid
+      background $gold
+    &.low
+      background $red
+
+// 星舰按钮
+.btn-launch
+  gradient-btn()
+  font-family 'Orbitron', sans-serif
+  letter-spacing 2px
+  text-transform uppercase

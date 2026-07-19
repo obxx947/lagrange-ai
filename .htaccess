@@ -1,0 +1,46 @@
+# ============================================================
+# Apache .htaccess 配置
+# 如果通过Apache反向代理访问，可用于URL重写和缓存控制
+# 实际部署不需要Apache，此文件为完整文档的一部分
+# ============================================================
+
+# 启用重写引擎
+RewriteEngine On
+
+# 强制 HTTPS（如果需要）
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# API 代理到 FastAPI 后端
+RewriteRule ^api/(.*) http://127.0.0.1:3000/api/$1 [P,L]
+
+# 静态资源缓存
+<FilesMatch "\.(css|js|svg|png|jpg|gif|ico|woff2)$">
+    Header set Cache-Control "max-age=31536000, public, immutable"
+</FilesMatch>
+
+# HTML 不缓存
+<FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+</FilesMatch>
+
+# 安全头
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-XSS-Protection "1; mode=block"
+
+# 禁止访问敏感文件
+<FilesMatch "\.(env|db|sqlite|log|pkl|bin)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 禁止目录浏览
+Options -Indexes
+
+# 自定义错误页
+ErrorDocument 404 /index.html
+ErrorDocument 500 /index.html
+
+# 压缩
+AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json

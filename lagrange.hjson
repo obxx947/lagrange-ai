@@ -1,0 +1,52 @@
+{
+  // ============================================================
+  // 拉格朗日AI — HJSON 配置（人类友好JSON）
+  // ============================================================
+  name: 无尽的拉格朗日 AI战术推演中心
+  version: 2.0.0
+
+  server: {
+    host: 0.0.0.0
+    port: 3000
+  }
+
+  features: [
+    {
+      id: ai-chat
+      name: AI战术分析
+      desc: 基于DeepSeek+RAG的专业战斗推演
+    }
+    {
+      id: battle-sim
+      name: 战斗模拟器
+      desc: 实时推演引擎，护航/轰炸双模式
+    }
+    {
+      id: ship-db
+      name: 169艘舰船图鉴
+      desc: 完整HP/装甲/武器/模块/评级数据
+    }
+    {
+      id: fleet-save
+      name: 云端编队存档
+      desc: 登录绑定，跨设备同步
+    }
+    {
+      id: admin
+      name: 管理员后台
+      desc: Token充值+对账日志
+    }
+  ]
+
+  shipCounts: {
+    cruiser: 42
+    destroyer: 42
+    frigate: 36
+    corvette: 22
+    battlecruiser: 10
+    fighter: 9
+    aircraftcarrier: 5
+    support: 2
+    battleship: 1
+  }
+}

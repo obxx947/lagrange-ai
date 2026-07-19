@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ============================================================
+  拉格朗日AI — 舰船数据 XML 格式
+  从 ship_database.json 转换，用于数据交换和XSLT渲染
+  ============================================================ -->
+<job id="LagrangeAI-Automation">
+  <script language="VBScript">
+    <![CDATA[
+      ' Windows Script File — 综合管理任务
+      ' 用法：cscript //Nologo tasks.wsf [start|stop|status|backup|cleanup|rebuild|test]
+      
+      Dim cmd, shell, fso
+      Set shell = CreateObject("WScript.Shell")
+      Set fso = CreateObject("Scripting.FileSystemObject")
+      
+      If WScript.Arguments.Count = 0 Then
+        WScript.Echo "拉格朗日AI — 任务管理"
+        WScript.Echo "用法: cscript tasks.wsf [命令]"
+        WScript.Echo "命令: start | stop | status | backup | cleanup | rebuild | test"
+        WScript.Quit
+      End If
+      
+      cmd = LCase(WScript.Arguments(0))
+      
+      Select Case cmd
+        Case "start":
+          shell.Run "cmd /c start /MIN python main.py", 0, False
+          WScript.Echo "[启动] 服务正在启动..."
+          
+        Case "stop":
+          shell.Run "taskkill /F /IM python.exe 2>nul", 0, True
+          WScript.Echo "[停止] 服务已停止"
+          
+        Case "status":
+          Dim exec, output
+          Set exec = shell.Exec("netstat -ano | findstr :3000")
+          output = exec.StdOut.ReadAll()
+          If Len(output) > 0 Then
+            WScript.Echo "[运行中] http://127.0.0.1:3000"
+          Else
+            WScript.Echo "[已停止]"
+          End If
+          
+        Case "backup":
+          shell.Run "python -c ""from database import backup_database; print(backup_database())""", 1, True
+          
+        Case "cleanup":
+          shell.Run "python -c ""from database import cleanup_expired_data; print(cleanup_expired_data())""", 1, True
+          
+        Case "rebuild":
+          shell.Run "python -c ""from rag_service import build_vector_index; print(build_vector_index())""", 1, True
+          
+        Case "test":
+          shell.Run "python test_api.py", 1, True
+          
+        Case Else:
+          WScript.Echo "未知命令: " & cmd
+      End Select
+    ]]>
+  </script>
+</job>

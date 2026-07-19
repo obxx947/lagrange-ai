@@ -1,0 +1,114 @@
+# ============================================================
+# 拉格朗日AI — Kubernetes 部署配置
+# 部署：kubectl apply -f k8s-deployment.yaml
+# ============================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lagrange-ai
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lagrange-config
+  namespace: lagrange-ai
+data:
+  host: "0.0.0.0"
+  port: "3000"
+  database-path: "/data/lagrange.db"
+  chroma-path: "/data/chroma_db"
+  docs-path: "/data/lagrange_docs"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lagrange-data-pvc
+  namespace: lagrange-ai
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lagrange-api
+  namespace: lagrange-ai
+  labels:
+    app: lagrange-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lagrange-api
+  template:
+    metadata:
+      labels:
+        app: lagrange-api
+    spec:
+      containers:
+      - name: api
+        image: lagrange-ai:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DEEPSEEK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: lagrange-secrets
+              key: api-key
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: lagrange-secrets
+              key: admin-password
+        envFrom:
+        - configMapRef:
+            name: lagrange-config
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: lagrange-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lagrange-api
+  namespace: lagrange-ai
+spec:
+  selector:
+    app: lagrange-api
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: lagrange-secrets
+  namespace: lagrange-ai
+type: Opaque
+stringData:
+  api-key: "sk-placeholder-api-key"
+  admin-password: "admin_lagrange_2024"
+  jwt-secret: "lagrange-jwt-secret-key"

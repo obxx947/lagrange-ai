@@ -1,0 +1,64 @@
+# ============================================================
+# 拉格朗日AI — TOML 配置文件
+# 相比YAML更严格的格式，适合程序化读写
+# ============================================================
+
+[server]
+host = "0.0.0.0"
+port = 3000
+workers = 1
+log_level = "info"
+
+[deepseek]
+model = "deepseek-chat"
+temperature = 0.3
+max_tokens = 2048
+timeout = 120
+# API密钥从.env文件读取，不在此处配置
+
+[rag]
+chunk_size = 500
+chunk_overlap = 50
+retrieval_top_k = 5
+max_features = 5000
+embedding_model = "tfidf"
+
+[auth]
+jwt_expiration_days = 7
+bcrypt_rounds = 12
+admin_password_hash = "bcrypt_from_env"
+
+[auth.rate_limit]
+max_requests = 10
+window_seconds = 3600
+
+[billing]
+new_user_tokens = 10000
+recharge_min = 1
+recharge_max = 1000000
+
+[database]
+path = "./lagrange.db"
+backup_dir = "./db_backup"
+
+[database.cleanup]
+session_days = 7
+chat_days = 14
+
+[documents]
+desktop_materials = "C:/Users/Administrator/Desktop/质料"
+lagrange_docs = "./lagrange_docs"
+allowed_extensions = [".txt", ".md", ".pdf"]
+
+[battle]
+tuning_coefficient = 1.3
+min_damage_ratio = 0.1
+base_crit_rate = 0.15
+system_damage_chance = 0.10
+plutus_reduction = 0.30
+max_sim_time = 300
+
+[frontend]
+theme = "dark"
+language = "zh-CN"
+max_chat_history = 200
