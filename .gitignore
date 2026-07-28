@@ -72,3 +72,4 @@ Desktop.ini
 !chroma_db/.gitkeep
 !db_backup/.gitkeep
 ".github/"  
+".npm-cache/"  

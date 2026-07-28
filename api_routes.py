@@ -11,7 +11,8 @@
 - 向量库重建接口
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Body
+from fastapi.responses import StreamingResponse
 
 from models import (
     RegisterRequest, LoginRequest, ChatRequest,
@@ -479,3 +480,144 @@ def _save_chat_record(
         conn.close()
     except Exception as e:
         print(f"[记录] 保存对话记录失败：{e}")
+
+# ========== 高性能战斗计算API（基于战斗机制.txt修正公式）==========
+@router.post("/battle/simulate")
+async def api_battle_simulate(data: dict):
+    """精确战斗模拟"""
+    import random, math
+    TUNE, CRIT, SYS_CHANCE = 1.3, 0.15, 0.10
+    
+    def e_dmg(b, t, s): return 0 if s>=100 else max(0,(b+t-b*s/100)*TUNE)
+    def p_dmg(b, t, a):
+        r = (b+t)*TUNE-a
+        return max(0,r) if r>0 else max(0,(b+t)/10*TUNE)
+    
+    ally, enemy = [], []
+    for s in data.get("allyShips",[]):
+        ws = [{"d":w,"p":"cd","cd":random.random()*w.get("cooldown",4)*0.5,"lk":0,"atk":0,"sf":0,"ts":w.get("attacks",1)*w.get("ammo",1),"tg":None} for w in s.get("weapons",[])]
+        ally.append({"id":s.get("id"),"n":s.get("name",""),"hp":s.get("hp",5e4),"mhp":s.get("hp",5e4),"pa":s.get("physicalArmor",10),"es":s.get("energyArmor",5),"ev":s.get("evasion",0),"esc":s.get("isEscort",False),"esd":s.get("isEscorted",False),"alive":True,"ws":ws,"td":0})
+    for s in data.get("enemyShips",[]):
+        ws = [{"d":w,"p":"cd","cd":random.random()*w.get("cooldown",4)*0.5,"lk":0,"atk":0,"sf":0,"ts":w.get("attacks",1)*w.get("ammo",1),"tg":None} for w in s.get("weapons",[])]
+        enemy.append({"id":s.get("id"),"n":s.get("name",""),"hp":s.get("hp",5e4),"mhp":s.get("hp",5e4),"pa":s.get("physicalArmor",10),"es":s.get("energyArmor",5),"ev":s.get("evasion",0),"esc":s.get("isEscort",False),"esd":s.get("isEscorted",False),"alive":True,"ws":ws,"td":0})
+    
+    t, dt, mt = 0.0, 0.1, data.get("maxTime",300)
+    while t < mt:
+        t += dt
+        ae = any(s["alive"] for s in ally if s["esc"])
+        ee = any(s["alive"] for s in enemy if s["esc"])
+        aa = [s for s in ally if s["alive"]]; ea = [s for s in enemy if s["alive"]]
+        for side, ships, enemies in [("a",ally,ea),("e",enemy,aa)]:
+            for ship in ships:
+                if not ship["alive"]: continue
+                for ws in ship["ws"]:
+                    w = ws["d"]
+                    if ws["p"] == "cd":
+                        ws["cd"] -= dt
+                        if ws["cd"] <= 0: ws["p"] = "lk"; ws["lk"] = w.get("lockTime",2)
+                    elif ws["p"] == "lk":
+                        ws["lk"] -= dt; ws["tg"] = random.choice(enemies) if enemies else None
+                        if ws["lk"] <= 0 and ws["tg"]:
+                            ws["p"] = "atk"; ws["atk"] = w.get("atkDuration",0); ws["sf"] = 0
+                            if w.get("atkDuration",0) <= 0:
+                                for _ in range(ws["ts"]):
+                                    tg = ws["tg"]
+                                    if not tg["alive"]: break
+                                    h = (w.get("hitMin",50)+random.random()*(w.get("hitMax",70)-w.get("hitMin",50)))/100*(1-tg["ev"]/100)
+                                    if random.random() > h: continue
+                                    if tg["esd"] and ((side=="a" and ae) or (side=="e" and ee)): continue
+                                    tech = w.get("singleDmg",100)*0.05
+                                    dmg = e_dmg(w.get("singleDmg",100),tech,tg["es"]) if w.get("dmgType")=="energy" else p_dmg(w.get("singleDmg",100),tech,tg["pa"])
+                                    if w.get("crit") and random.random()<CRIT: dmg*=1.5
+                                    dmg = max(0,round(dmg))
+                                    tg["hp"] -= dmg; ship["td"] += dmg
+                                    if tg["hp"] <= 0: tg["hp"] = 0; tg["alive"] = False
+                                ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4)
+                    elif ws["p"] == "atk":
+                        ws["atk"] -= dt
+                        tg = ws["tg"]
+                        if tg and tg["alive"] and w.get("atkDuration",0)>0:
+                            n = max(1,int(ws["ts"]*(dt/max(0.01,w.get("atkDuration",0)))))
+                            for _ in range(min(n, ws["ts"]-ws["sf"])):
+                                h = (w.get("hitMin",50)+random.random()*(w.get("hitMax",70)-w.get("hitMin",50)))/100*(1-tg["ev"]/100)
+                                if random.random() > h: continue
+                                if tg["esd"] and ((side=="a" and ae) or (side=="e" and ee)): continue
+                                tech = w.get("singleDmg",100)*0.05
+                                dmg = e_dmg(w.get("singleDmg",100),tech,tg["es"]) if w.get("dmgType")=="energy" else p_dmg(w.get("singleDmg",100),tech,tg["pa"])
+                                if w.get("crit") and random.random()<CRIT: dmg*=1.5
+                                dmg = max(0,round(dmg))
+                                tg["hp"] -= dmg; ship["td"] += dmg; ws["sf"] += 1
+                                if tg["hp"] <= 0: tg["hp"] = 0; tg["alive"] = False; break
+                        if ws["atk"] <= 0 or ws["sf"] >= ws["ts"]: ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4); ws["tg"] = None
+        if not any(s["alive"] for s in ally): return {"winner":"enemy","duration":round(t,1),"allyDmg":sum(s["td"] for s in ally),"enemyDmg":sum(s["td"] for s in enemy)}
+        if not any(s["alive"] for s in enemy): return {"winner":"ally","duration":round(t,1),"allyDmg":sum(s["td"] for s in ally),"enemyDmg":sum(s["td"] for s in enemy)}
+    return {"winner":"timeout","duration":round(t,1),"allyDmg":sum(s["td"] for s in ally),"enemyDmg":sum(s["td"] for s in enemy)}
+
+@router.post("/battle/calc")
+async def api_quick_calc(data: dict):
+    base = data.get("singleDmg",100); tech = data.get("techBonus",0)
+    if data.get("dmgType") == "energy":
+        s = data.get("energyShield",5)
+        if s >= 100: return {"damage":0,"formula":"100%护盾免疫"}
+        dmg = max(0,(base+tech-base*s/100)*1.3)
+    else:
+        a = data.get("physicalArmor",10); r = (base+tech)*1.3-a
+        dmg = max(0,r) if r>0 else max(0,(base+tech)/10*1.3)
+    return {"damage":round(dmg,1)}
+
+
+# ==================== Agent 智能体 SSE 聊天 API ====================
+
+@router.post("/agent/chat")
+async def api_agent_chat(request: Request):
+    """
+    Agent 智能体对话 — SSE 流式输出（本地运行，无需登录）
+    """
+    from agent_orchestrator import agent_chat_stream
+    import json
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    user_message = body.get("message", "") if isinstance(body, dict) else str(body)
+    history = body.get("history", []) if isinstance(body, dict) else []
+    sim_state = body.get("simulator_state") if isinstance(body, dict) else None
+
+    return StreamingResponse(
+        agent_chat_stream(
+            user_message=user_message,
+            history=history,
+            user_id=0,
+            simulator_state=sim_state,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
+# ==================== 用户自配置 API ====================
+
+@router.get("/config")
+async def api_get_config():
+    """获取本地AI配置（无需登录）"""
+    from user_config import get_local_config
+    return get_local_config()
+
+
+@router.post("/config")
+async def api_save_config(data: dict):
+    """保存本地AI配置"""
+    from user_config import save_local_config
+    return save_local_config(data)
+
+
+@router.delete("/config")
+async def api_reset_config():
+    """重置本地AI配置"""
+    from user_config import reset_local_config
+    return reset_local_config()

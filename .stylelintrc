@@ -1,0 +1,197 @@
+{
+  "extends": [
+    "stylelint-config-standard",
+    "stylelint-config-css-modules",
+    "stylelint-config-recess-order"
+  ],
+  "plugins": [
+    "stylelint-order",
+    "stylelint-scss",
+    "stylelint-no-unsupported-browser-features",
+    "stylelint-declaration-strict-value",
+    "stylelint-color-format",
+    "stylelint-selector-bem-pattern",
+    "stylelint-declaration-block-no-ignored-properties",
+    "stylelint-high-performance-animation",
+    "stylelint-use-logical-spec",
+    "stylelint-a11y"
+  ],
+  "rules": {
+    "at-rule-no-unknown": null,
+    "scss/at-rule-no-unknown": true,
+    "scss/dollar-variable-pattern": "^[a-z][a-z0-9-]*$",
+    "scss/at-mixin-pattern": "^[a-z][a-z0-9-]*$",
+    "scss/at-function-pattern": "^[a-z][a-z0-9-]*$",
+    "scss/percent-placeholder-pattern": "^[a-z][a-z0-9-]*$",
+    "scss/double-slash-comment-empty-line-before": null,
+    "scss/comment-no-empty": true,
+    "color-no-invalid-hex": true,
+    "color-no-hex": [false],
+    "color-format/format": {
+      "format": "rgba"
+    },
+    "declaration-block-no-duplicate-properties": [
+      true,
+      { "ignore": ["consecutive-duplicates-with-different-values"] }
+    ],
+    "declaration-no-important": [true, { "severity": "warning" }],
+    "declaration-block-no-redundant-longhand-properties": true,
+    "declaration-strict-value": [
+      "/color$/",
+      { "ignoreKeywords": ["currentColor", "transparent", "inherit"] }
+    ],
+    "max-nesting-depth": [4, { "severity": "warning" }],
+    "number-max-precision": [4, { "severity": "warning" }],
+    "time-min-milliseconds": [100, { "severity": "warning" }],
+    "unit-disallowed-list": ["em", "rem", "px"],
+    "shorthand-property-no-redundant-values": true,
+    "alpha-value-notation": "number",
+    "color-function-notation": "modern",
+    "length-zero-no-unit": true,
+    "font-family-name-quotes": "always-where-recommended",
+    "font-weight-notation": "numeric",
+    "function-disallowed-list": [],
+    "function-url-no-scheme-relative": true,
+    "function-url-quotes": "always",
+    "selector-max-specificity": ["0,5,0", { "severity": "warning" }],
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9_-]*$",
+      {
+        "message": "Selector class pattern must use kebab-case",
+        "resolveNestedSelectors": true
+      }
+    ],
+    "selector-id-pattern": "^[a-z][a-z0-9_-]*$",
+    "selector-max-id": 0,
+    "selector-max-compound-selectors": [5, { "severity": "warning" }],
+    "selector-max-type": [3, { "severity": "warning" }],
+    "selector-no-qualifying-type": [true, { "ignore": ["attribute"] }],
+    "no-descending-specificity": [true, { "severity": "warning" }],
+    "no-duplicate-selectors": true,
+    "no-unknown-animations": true,
+    "property-disallowed-list": [],
+    "value-keyword-case": [
+      "lower",
+      { "camelCaseSvgKeywords": true }
+    ],
+    "keyframe-declaration-no-important": true,
+    "keyframes-name-pattern": "^[a-z][a-z0-9-]*$",
+    "custom-property-pattern": "^[a-z][a-z0-9-]*(-[a-z][a-z0-9-]*)*$",
+    "custom-media-pattern": "^[a-z][a-z0-9-]*(-[a-z][a-z0-9-]*)*$",
+    "selector-pseudo-element-colon-notation": "double",
+    "selector-pseudo-class-no-unknown": true,
+    "selector-pseudo-element-no-unknown": true,
+    "selector-attribute-quotes": "always",
+    "comment-no-empty": true,
+    "comment-empty-line-before": [
+      "always",
+      { "except": ["first-nested"], "ignore": ["stylelint-commands"] }
+    ],
+    "rule-empty-line-before": [
+      "always-multi-line",
+      { "except": ["first-nested"], "ignore": ["after-comment"] }
+    ],
+    "at-rule-empty-line-before": [
+      "always",
+      { "except": ["blockless-after-same-name-blockless", "first-nested"] }
+    ],
+    "max-line-length": [120, { "severity": "warning" }],
+    "order/properties-alphabetical-order": null,
+    "order/properties-order": [
+      "content",
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "z-index",
+      "display",
+      "flex",
+      "flex-direction",
+      "flex-wrap",
+      "align-items",
+      "align-content",
+      "justify-content",
+      "grid",
+      "grid-template-columns",
+      "grid-template-rows",
+      "grid-gap",
+      "width",
+      "height",
+      "max-width",
+      "max-height",
+      "min-width",
+      "min-height",
+      "margin",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+      "padding",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "overflow",
+      "color",
+      "background",
+      "background-color",
+      "background-image",
+      "background-size",
+      "border",
+      "border-radius",
+      "border-color",
+      "box-shadow",
+      "opacity",
+      "font",
+      "font-family",
+      "font-size",
+      "font-weight",
+      "font-style",
+      "line-height",
+      "letter-spacing",
+      "text-align",
+      "text-transform",
+      "text-decoration",
+      "white-space",
+      "word-break",
+      "cursor",
+      "transform",
+      "transition",
+      "animation",
+      "visibility",
+      "pointer-events"
+    ],
+    "plugin/no-unsupported-browser-features": [
+      true,
+      {
+        "browsers": ["> 1%", "last 2 versions", "not dead", "not ie 11"],
+        "severity": "warning"
+      }
+    ],
+    "plugin/stylelint-selector-bem-pattern": {
+      "componentName": "[A-Z]+",
+      "componentSelectors": {
+        "initial": "^\\.{componentName}(?:-[a-z]+)?(?:__[a-z]+)?(?:--[a-z]+)?$",
+        "combined": "^\\.combined-{componentName}-[a-z]+$"
+      },
+      "utilitySelectors": "^\\.u-[a-z]+$"
+    },
+    "plugin/use-logical-spec": true,
+    "plugin/no-low-performance-animation-properties": [true, { "severity": "warning" }],
+    "a11y/media-prefers-reduced-motion": true,
+    "a11y/no-outline-none": true,
+    "a11y/selector-pseudo-class-focus": true,
+    "a11y/content-property-no-static-value": [true, { "severity": "warning" }],
+    "a11y/font-size-is-readable": [true, { "severity": "warning" }]
+  },
+  "ignoreFiles": [
+    "node_modules/**/*.css",
+    "dist/**/*.css",
+    "build/**/*.css",
+    "coverage/**/*.css",
+    "vendor/**/*.css",
+    "third-party/**/*.css",
+    "*.min.css"
+  ]
+}

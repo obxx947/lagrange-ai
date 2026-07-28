@@ -1,33 +1,86 @@
+include pyproject.toml
+include setup.py
+include setup.cfg
+include MANIFEST.in
+include requirements.txt
+include requirements-dev.txt
+include Makefile
+include Dockerfile
+include Dockerfile.dev
+include docker-compose*.yml
+include VERSION
+
 include *.py
-include *.bat
-include *.ps1
-include *.sh
-include *.js
 include *.html
 include *.css
+include *.js
 include *.json
 include *.yaml
+include *.yml
 include *.toml
-include *.ini
 include *.cfg
-include *.xml
-include *.sql
+include *.ini
 include *.md
 include *.rst
+include *.adoc
+include *.sh
+include *.bat
+include *.ps1
+include *.sql
+include *.graphql
 include *.txt
-include *.reg
-include *.vbs
-include *.hta
-include *.wsf
-include *.php
+include *.xml
 include *.properties
 include *.env.example
-include requirements.txt
-include Makefile
+include *.env.template
 include .gitignore
+include .gitattributes
+include .gitmodules
 include .editorconfig
+include .prettierrc
+include .eslintrc.json
+include .stylelintrc
+include .babelrc.json
+include .postcssrc
+include .babelrc
+include .npmrc
+include .nvmrc
+include .python-version
 include .htaccess
+include .parcelrc
+include LICENSE
+
+recursive-include src/lagrange *.py *.pyx *.pxd *.c *.h *.cpp *.hpp *.so *.pyd
 recursive-include static *
-recursive-include deploy *
-recursive-include lagrange_docs *.txt *.md *.json
-recursive-include exports *.csv *.tsv *.txt
+recursive-include public *
+recursive-include templates *
+recursive-include docs *.md *.rst *.yaml *.json *.graphql
+recursive-include config *.yml *.yaml *.json *.conf *.properties *.toml
+recursive-include k8s *.yaml *.yml *.json
+recursive-include certs *.key *.pem *.crt *.csr *.jks *.p12 *.pfx
+recursive-include scripts *.sh *.py *.js *.bat *.ps1
+recursive-include lagrange_docs *.txt *.md *.json *.html
+recursive-include exports *.csv *.tsv *.txt *.json
+recursive-include tests *.py *.json *.yaml *.yml
+recursive-include .github *.yml *.yaml *.md *.json
+
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+recursive-exclude * *.pyo
+recursive-exclude * *.so
+recursive-exclude * *.pyd
+recursive-exclude * .DS_Store
+recursive-exclude * Thumbs.db
+recursive-exclude * *.log
+recursive-exclude * node_modules
+recursive-exclude * .git
+recursive-exclude * .idea
+recursive-exclude * .vscode
+recursive-exclude * chroma_db
+recursive-exclude * db_backup
+
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .git
+prune tests/__pycache__
+prune src/lagrange/__pycache__

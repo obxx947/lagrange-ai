@@ -1,0 +1,257 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Lagrange Tactical AI - API",
+    "description": "Infinite Lagrange Tactical Analysis Center REST API - Fleet combat simulation, ship intelligence, and RAG-powered AI advisor",
+    "version": "2.0.0",
+    "contact": {
+      "name": "Lagrange AI Community",
+      "email": "dev@lagrange-ai.dev",
+      "url": "https://discord.gg/lagrange-ai"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "termsOfService": "https://lagrange-ai.dev/terms"
+  },
+  "host": "api.lagrange.example.com",
+  "basePath": "/",
+  "schemes": ["https", "http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "JWT token in format: Bearer <token>"
+    }
+  },
+  "tags": [
+    { "name": "System", "description": "Health and monitoring" },
+    { "name": "Auth", "description": "User authentication" },
+    { "name": "Ships", "description": "Ship database (169 ships)" },
+    { "name": "Battle", "description": "Combat simulation" },
+    { "name": "Fleet", "description": "Fleet management" },
+    { "name": "AI Chat", "description": "RAG-powered advisor" },
+    { "name": "Admin", "description": "Admin operations" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Service health check",
+        "description": "Returns the health status of the Lagrange AI platform",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": { "type": "string", "example": "ok" },
+                "version": { "type": "string", "example": "2.0.0" },
+                "database": { "type": "string", "example": "connected" },
+                "rag_index": { "type": "string", "example": "ready" },
+                "ships_loaded": { "type": "integer", "example": 169 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register new user",
+        "description": "Create account with 10,000 free tokens",
+        "operationId": "registerUser",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["username", "password"],
+              "properties": {
+                "username": { "type": "string", "minLength": 3, "maxLength": 32 },
+                "password": { "type": "string", "minLength": 8, "format": "password" },
+                "email": { "type": "string", "format": "email" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": { "description": "User created" },
+          "409": { "description": "Username exists" }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User login",
+        "operationId": "loginUser",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["username", "password"],
+              "properties": {
+                "username": { "type": "string" },
+                "password": { "type": "string", "format": "password" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "JWT token" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/ships": {
+      "get": {
+        "tags": ["Ships"],
+        "summary": "Query ships",
+        "operationId": "listShips",
+        "parameters": [
+          { "name": "class", "in": "query", "type": "string", "enum": ["frigate","destroyer","cruiser","battlecruiser","battleship","carrier","supercarrier"] },
+          { "name": "faction", "in": "query", "type": "string" },
+          { "name": "search", "in": "query", "type": "string" },
+          { "name": "page", "in": "query", "type": "integer", "default": 1 },
+          { "name": "limit", "in": "query", "type": "integer", "default": 20, "maximum": 100 }
+        ],
+        "responses": { "200": { "description": "Ship list" } }
+      }
+    },
+    "/api/ships/{ship_id}": {
+      "get": {
+        "tags": ["Ships"],
+        "summary": "Ship detail",
+        "operationId": "getShip",
+        "parameters": [
+          { "name": "ship_id", "in": "path", "required": true, "type": "integer" }
+        ],
+        "responses": {
+          "200": { "description": "Ship details" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": ["AI Chat"],
+        "summary": "Tactical AI chat",
+        "operationId": "chatWithAI",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["message"],
+              "properties": {
+                "message": { "type": "string" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "AI response" },
+          "402": { "description": "Insufficient tokens" }
+        }
+      }
+    },
+    "/api/simulator/save": {
+      "post": {
+        "tags": ["Fleet"],
+        "summary": "Save fleet composition",
+        "operationId": "saveFleet",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["name", "ships"],
+              "properties": {
+                "name": { "type": "string" },
+                "ships": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ship_id": { "type": "integer" },
+                      "count": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": { "201": { "description": "Fleet saved" } }
+      }
+    },
+    "/api/simulator/analyze": {
+      "post": {
+        "tags": ["Battle"],
+        "summary": "Analyze fleet battle",
+        "operationId": "analyzeBattle",
+        "security": [{ "Bearer": [] }],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["attacker_fleet_id", "defender_fleet_id"],
+              "properties": {
+                "attacker_fleet_id": { "type": "integer" },
+                "defender_fleet_id": { "type": "integer" }
+              }
+            }
+          }
+        ],
+        "responses": { "200": { "description": "Battle results" } }
+      }
+    },
+    "/api/admin/recharge": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Recharge tokens (admin)",
+        "operationId": "rechargeTokens",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": ["user_id", "amount"],
+              "properties": {
+                "user_id": { "type": "integer" },
+                "amount": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Recharged" },
+          "403": { "description": "Access denied" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,297 @@
+---
+// FleetPage.astro - Fleet Management Page for Lagrange Tactical AI
+// Astro component with server-side data fetching and client-side interactivity
+import ShipCard from '../components/ShipCard.vue';
+import BattleViewer from '../components/BattleViewer.svelte';
+
+// Server-side data fetching
+const API_BASE = import.meta.env.LAGRANGE_API_URL || 'http://127.0.0.1:8080/api';
+
+interface Ship {
+  id: string; name: string; ship_class: string; tier: number; rating: number;
+  hp: number; armor: number; shield: number; speed: number; energy: number;
+  evasion: number; accuracy: number; crit_rate: number; weapon_dps: number;
+  weapons: Array<{ type: string; name: string; damage: number; range: number }>;
+  tags: string[];
+}
+
+interface FleetData {
+  id: string; name: string; ships: Ship[]; totalCommandValue: number;
+}
+
+let ships: Ship[] = [];
+let fleets: FleetData[] = [];
+let aiRecommendation = null;
+let error: string | null = null;
+
+try {
+  const shipRes = await fetch(`${API_BASE}/ships?limit=100`);
+  if (shipRes.ok) {
+    const data = await shipRes.json();
+    ships = data.ships || data;
+  } else {
+    ships = [];
+  }
+
+  const fleetRes = await fetch(`${API_BASE}/fleets`);
+  if (fleetRes.ok) {
+    fleets = await fleetRes.json();
+  } else {
+    fleets = [];
+  }
+
+  const recRes = await fetch(`${API_BASE}/recommend`);
+  if (recRes.ok) {
+    aiRecommendation = await recRes.json();
+  }
+} catch (e) {
+  error = `Failed to load data: ${e.message}`;
+  ships = [];
+  fleets = [];
+}
+
+const shipClasses = [...new Set(ships.map(s => s.ship_class).filter(Boolean))].sort();
+const tiers = [1, 2, 3];
+---
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fleet Management | Lagrange Tactical AI</title>
+    <style>
+      :root {
+        --bg: #0a0e1a; --card: #111827; --border: #1e3a8a;
+        --text: #d0d8f0; --accent: #60a5fa; --danger: #ef4444;
+        --success: #22c55e; --warning: #f59e0b;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: var(--bg);
+        font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        color: var(--text);
+        padding: 20px;
+      }
+      .page-header {
+        text-align: center;
+        padding: 24px;
+        margin-bottom: 24px;
+        background: linear-gradient(135deg, var(--card), #1e293b, var(--card));
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .page-header h1 {
+        color: var(--accent);
+        font-size: 26px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+      }
+      .page-header .subtitle {
+        color: #93c5fd;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+
+      .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+      @media (max-width: 1024px) { .layout { grid-template-columns: 1fr; } }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+      .panel h2 {
+        color: var(--accent);
+        font-size: 14px;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .ship-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+      }
+
+      .fleet-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        margin: 4px 0;
+        background: #0f172a;
+        border-radius: 6px;
+        border: 1px solid #1e293b;
+        font-size: 13px;
+      }
+      .fleet-list-item:hover { border-color: var(--accent); }
+      .fleet-list-item .fleet-cv {
+        font-size: 10px;
+        color: var(--warning);
+        padding: 2px 8px;
+        background: rgba(245, 158, 11, 0.15);
+        border-radius: 10px;
+      }
+
+      .ai-recommendation {
+        background: linear-gradient(135deg, #1a2040, #111827);
+        border: 1px solid #8b5cf6;
+      }
+      .ai-recommendation h2 { color: #8b5cf6; }
+      .rec-item {
+        padding: 8px 12px;
+        margin: 4px 0;
+        background: rgba(139, 92, 246, 0.08);
+        border-radius: 4px;
+        font-size: 12px;
+      }
+
+      .filter-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .filter-bar select, .filter-bar input {
+        background: #0f172a;
+        color: var(--text);
+        border: 1px solid #1e293b;
+        border-radius: 4px;
+        padding: 7px 12px;
+        font-size: 12px;
+      }
+      .btn {
+        padding: 8px 18px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 12px;
+      }
+      .btn:hover { opacity: 0.85; }
+
+      .error-banner {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <h1>Fleet Management Center</h1>
+      <div class="subtitle">
+        Total Ships: {ships.length} | Ship Classes: {shipClasses.length} | Saved Fleets: {fleets.length}
+      </div>
+    </div>
+
+    {#if error}
+      <div class="error-banner">Error: {error}</div>
+    {/if}
+
+    <div class="layout">
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Ship Encyclopedia -->
+        <div class="panel">
+          <h2>Ship Encyclopedia</h2>
+          <div class="filter-bar">
+            <input type="text" id="shipSearch" placeholder="Search ships..." />
+            <select id="classFilter">
+              <option value="">All Classes</option>
+              {shipClasses.map(cls => <option value={cls}>{cls}</option>)}
+            </select>
+            <select id="tierFilter">
+              <option value="">All Tiers</option>
+              {tiers.map(t => <option value={`T${t}`}>Tier {t}</option>)}
+            </select>
+          </div>
+          <div class="ship-grid" id="shipGrid">
+            {ships.map(ship => <ShipCard ship={ship} compact={true} client:visible />)}
+          </div>
+        </div>
+
+        <!-- Saved Fleets -->
+        <div class="panel">
+          <h2>Saved Fleets</h2>
+          {#if fleets.length > 0}
+            {fleets.map(fleet => (
+              <div class="fleet-list-item">
+                <span><strong>{fleet.name}</strong> - {fleet.ships?.length || 0} ships</span>
+                <span class="fleet-cv">CV: {fleet.totalCommandValue || 0}</span>
+              </div>
+            ))}
+          {:else}
+            <div class="empty-state">No fleets saved yet. Build your first fleet above.</div>
+          {/if}
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <!-- AI Recommendation -->
+        <div class="panel ai-recommendation">
+          <h2>AI Tactical Recommendation</h2>
+          {#if aiRecommendation}
+            <div class="rec-item">
+              <strong>Strategy:</strong> {aiRecommendation.strategy || 'Balanced'}
+            </div>
+            <div class="rec-item">
+              <strong>Recommended CV:</strong> {aiRecommendation.total_cv_used || 0} / 500
+            </div>
+            {aiRecommendation.tanks?.map(s => (
+              <div class="rec-item">Tank: {s.name}</div>
+            ))}
+            {aiRecommendation.dps_ships?.map(s => (
+              <div class="rec-item">DPS: {s.name}</div>
+            ))}
+            {aiRecommendation.supports?.map(s => (
+              <div class="rec-item">Support: {s.name}</div>
+            ))}
+          {:else}
+            <div class="empty-state">AI analysis not available.</div>
+          {/if}
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="panel">
+          <h2>Database Stats</h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="background: #0f172a; padding: 10px; border-radius: 4px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b;">Total Ships</div>
+              <div style="font-size: 20px; font-weight: bold; color: var(--accent);">{ships.length}</div>
+            </div>
+            <div style="background: #0f172a; padding: 10px; border-radius: 4px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b;">Ship Classes</div>
+              <div style="font-size: 20px; font-weight: bold; color: var(--success);">{shipClasses.length}</div>
+            </div>
+            <div style="background: #0f172a; padding: 10px; border-radius: 4px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b;">Saved Fleets</div>
+              <div style="font-size: 20px; font-weight: bold; color: var(--warning);">{fleets.length}</div>
+            </div>
+            <div style="background: #0f172a; padding: 10px; border-radius: 4px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b;">AI Ready</div>
+              <div style="font-size: 20px; font-weight: bold; color: var(--success);">{aiRecommendation ? 'Yes' : 'No'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

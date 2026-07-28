@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ship Encyclopedia - Lagrange Tactical Database</title>
+    <style>
+        :root {
+            --bg: #0a0e1a;
+            --card: #111827;
+            --border: #1e3a8a;
+            --text: #d0d8f0;
+            --accent: #60a5fa;
+            --gold: #f59e0b;
+            --red: #ef4444;
+            --green: #22c55e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            color: var(--text);
+            padding: 20px;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border);
+        }
+        .page-header h1 {
+            color: var(--accent);
+            font-size: 24px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .page-header .subtitle {
+            color: #93c5fd;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 18px;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 36px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 14px;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        .toolbar select {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            color: var(--text);
+            padding: 9px 12px;
+            font-size: 13px;
+        }
+        .toolbar select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 9px 18px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--accent);
+        }
+
+        .result-count {
+            font-size: 12px;
+            color: #93c5fd;
+            margin-left: auto;
+        }
+
+        /* Ship Grid */
+        .ship-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .ship-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        .ship-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+        }
+        .ship-card.hidden { display: none; }
+
+        .ship-card .card-top {
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #151d35 0%, #111827 100%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ship-card .ship-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--border);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .ship-card .ship-info { flex: 1; }
+        .ship-card .ship-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .ship-card .ship-class {
+            font-size: 11px;
+            color: #93c5fd;
+        }
+        .ship-card .ship-tier {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .tier-t1 { background: #92400e; color: #fbbf24; }
+        .tier-t2 { background: #4a5568; color: #cbd5e0; }
+        .tier-t3 { background: #713f12; color: #d97706; }
+
+        .ship-card .card-stats {
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .ship-card .mini-stat {
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .ship-card .mini-stat .mini-label { color: #64748b; }
+        .ship-card .mini-stat .mini-value { font-weight: bold; }
+
+        .ship-card .card-tags {
+            padding: 0 16px 12px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .ship-card .tag {
+            font-size: 9px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .pagination button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: bold;
+        }
+        .pagination button:hover:not(.active) { background: #1e293b; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .empty-state .empty-icon { font-size: 52px; margin-bottom: 15px; }
+
+        /* Quick view modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-backdrop.show { display: flex; }
+        .modal-content {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1>Ship Encyclopedia</h1>
+        <div class="subtitle">Complete database of Infinite Lagrange ships with tactical analysis</div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="search-box">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="shipSearch" placeholder="Search ships by name, class, or tag..."
+                   oninput="filterShips()" />
+        </div>
+        <select id="tierFilter" onchange="filterShips()">
+            <option value="">All Tiers</option>
+            <option value="T1">Tier 1</option>
+            <option value="T2">Tier 2</option>
+            <option value="T3">Tier 3</option>
+        </select>
+        <select id="classFilter" onchange="filterShips()">
+            <option value="">All Classes</option>
+            <% shipClasses.forEach(function(cls) { %>
+                <option value="<%= cls %>"><%= cls %></option>
+            <% }); %>
+        </select>
+        <select id="sortBy" onchange="filterShips()">
+            <option value="name">Sort: Name A-Z</option>
+            <option value="hp">Sort: Hull Points</option>
+            <option value="dps">Sort: Weapon DPS</option>
+            <option value="speed">Sort: Speed</option>
+            <option value="rating">Sort: Rating</option>
+        </select>
+        <span class="result-count" id="resultCount"></span>
+    </div>
+
+    <!-- Ship Grid -->
+    <div class="ship-grid" id="shipGrid">
+        <% ships.forEach(function(ship, index) { %>
+        <div class="ship-card"
+             data-name="<%= ship.name.toLowerCase() %>"
+             data-class="<%= ship.ship_class.toLowerCase() %>"
+             data-tier="<%= 'T' + ship.tier %>"
+             data-tags="<%= (ship.tags || []).join(' ').toLowerCase() %>"
+             data-hp="<%= ship.hp %>"
+             data-dps="<%= ship.weapon_dps %>"
+             data-speed="<%= ship.speed %>"
+             data-rating="<%= ship.rating %>"
+             onclick="showShipDetail('<%= ship.id %>')">
+            <div class="card-top">
+                <div class="ship-icon"></div>
+                <div class="ship-info">
+                    <div class="ship-name"><%= ship.name %></div>
+                    <div class="ship-class"><%= ship.ship_class %></div>
+                </div>
+                <span class="ship-tier tier-t<%= ship.tier %>">T<%= ship.tier %></span>
+            </div>
+            <div class="card-stats">
+                <div class="mini-stat">
+                    <span class="mini-label">HP</span>
+                    <span class="mini-value"><%= ship.hp.toLocaleString() %></span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-label">Armor</span>
+                    <span class="mini-value"><%= ship.armor.toLocaleString() %></span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-label">DPS</span>
+                    <span class="mini-value"><%= ship.weapon_dps.toLocaleString() %></span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-label">Speed</span>
+                    <span class="mini-value"><%= ship.speed.toLocaleString() %></span>
+                </div>
+            </div>
+            <div class="card-tags">
+                <% (ship.tags || []).forEach(function(tag) { %>
+                    <span class="tag"><%= tag %></span>
+                <% }); %>
+            </div>
+        </div>
+        <% }); %>
+    </div>
+
+    <% if (ships.length === 0) { %>
+    <div class="empty-state">
+        <div class="empty-icon">&#128752;</div>
+        <h3>No ships found</h3>
+        <p>Try adjusting your search or filter criteria.</p>
+    </div>
+    <% } %>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <% for (let p = 1; p <= totalPages; p++) { %>
+            <button class="<%= p === currentPage ? 'active' : '' %>"
+                    onclick="goToPage(<%= p %>)"><%= p %></button>
+        <% } %>
+    </div>
+
+    <script>
+        var allCards = document.querySelectorAll('.ship-card');
+
+        function filterShips() {
+            var searchQuery = (document.getElementById('shipSearch').value || '').toLowerCase();
+            var tierFilter  = document.getElementById('tierFilter').value;
+            var classFilter = document.getElementById('classFilter').value;
+            var sortBy      = document.getElementById('sortBy').value;
+            var visible     = 0;
+
+            allCards.forEach(function(card) {
+                var name  = card.dataset.name || '';
+                var cls   = card.dataset.class || '';
+                var tier  = card.dataset.tier || '';
+                var tags  = card.dataset.tags || '';
+
+                var matchesSearch = !searchQuery ||
+                    name.indexOf(searchQuery) >= 0 ||
+                    cls.indexOf(searchQuery) >= 0 ||
+                    tags.indexOf(searchQuery) >= 0;
+
+                var matchesTier  = !tierFilter || tier === tierFilter;
+                var matchesClass = !classFilter || cls === classFilter.toLowerCase();
+
+                if (matchesSearch && matchesTier && matchesClass) {
+                    card.classList.remove('hidden');
+                    visible++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Sort visible cards
+            sortCards(sortBy);
+
+            document.getElementById('resultCount').textContent =
+                'Showing ' + visible + ' of ' + allCards.length + ' ships';
+            if (visible === 0) showEmptyState(true);
+            else showEmptyState(false);
+        }
+
+        function sortCards(sortBy) {
+            var grid = document.getElementById('shipGrid');
+            var cards = Array.from(grid.querySelectorAll('.ship-card'));
+            cards.sort(function(a, b) {
+                var aVal, bVal;
+                switch (sortBy) {
+                    case 'hp': aVal = parseInt(a.dataset.hp) || 0; bVal = parseInt(b.dataset.hp) || 0; break;
+                    case 'dps': aVal = parseInt(a.dataset.dps) || 0; bVal = parseInt(b.dataset.dps) || 0; break;
+                    case 'speed': aVal = parseInt(a.dataset.speed) || 0; bVal = parseInt(b.dataset.speed) || 0; break;
+                    case 'rating': aVal = parseInt(a.dataset.rating) || 0; bVal = parseInt(b.dataset.rating) || 0; break;
+                    default: aVal = (a.dataset.name || ''); bVal = (b.dataset.name || ''); return aVal.localeCompare(bVal);
+                }
+                return bVal - aVal;
+            });
+            cards.forEach(function(c) { grid.appendChild(c); });
+        }
+
+        function showEmptyState(show) {
+            var existing = document.querySelector('.empty-state');
+            if (show && !existing) {
+                var div = document.createElement('div');
+                div.className = 'empty-state';
+                div.innerHTML = '<div class="empty-icon">&#128752;</div><h3>No ships match</h3><p>Try different filters.</p>';
+                document.getElementById('shipGrid').after(div);
+            } else if (!show && existing) {
+                existing.remove();
+            }
+        }
+
+        function showShipDetail(id) {
+            window.location.href = '/ships/' + id;
+        }
+
+        function goToPage(page) {
+            var params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            window.location.search = params.toString();
+        }
+
+        // Initialize count on load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('resultCount').textContent =
+                'Showing ' + allCards.length + ' of ' + allCards.length + ' ships';
+        });
+    </script>
+</body>
+</html>

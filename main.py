@@ -173,17 +173,57 @@ if exports_dir.exists():
 @app.get("/")
 async def root():
     """
-    根路径 → 返回一体化前端主页面
+    根路径 → 配舰星港模拟器（主界面）
+    包含：舰队配队 / 战斗模拟 / 舰船图鉴 / AI聊天 / 设置
     """
-    index_path = static_dir / "index.html"
-    if index_path.exists():
-        return FileResponse(str(index_path))
-    return {
-        "name": "无尽的拉格朗日 AI 战术推演中心",
-        "version": "1.0.0",
-        "status": "running",
-        "docs": "/docs",
-    }
+    sim_path = static_dir / "index.html"
+    if sim_path.exists():
+        return FileResponse(str(sim_path))
+    return {"error": "模拟器页面未找到"}
+
+
+@app.get("/intro")
+async def intro():
+    """
+    项目介绍页（战斗引擎 + 公式 + 数据来源）
+    """
+    serene_index = serene_dir / "index.html"
+    if serene_index.exists():
+        return FileResponse(str(serene_index))
+    return {"error": "页面未找到"}
+
+
+@app.get("/simulator.html")
+async def simulator():
+    """
+    配舰星港模拟器 → 完整战斗引擎
+    """
+    sim_path = static_dir / "index.html"
+    if sim_path.exists():
+        return FileResponse(str(sim_path))
+    return {"error": "模拟器页面未找到"}
+
+
+@app.get("/chat")
+async def chat_page():
+    """
+    AI 战术顾问 — 独立对话页面
+    """
+    chat_path = static_dir / "chat.html"
+    if chat_path.exists():
+        return FileResponse(str(chat_path))
+    return {"error": "页面未找到"}
+
+
+@app.get("/settings.html")
+async def settings():
+    """
+    AI智能体设置页
+    """
+    settings_path = static_dir / "settings.html"
+    if settings_path.exists():
+        return FileResponse(str(settings_path))
+    return {"error": "设置页面未找到"}
 
 
 @app.get("/health")

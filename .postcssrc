@@ -1,0 +1,144 @@
+{
+  "plugins": {
+    "postcss-import": {
+      "root": "./src",
+      "path": [
+        "src/styles",
+        "node_modules"
+      ],
+      "skipDuplicates": true
+    },
+    "postcss-mixins": {
+      "mixinsDir": "./src/styles/mixins"
+    },
+    "postcss-nested": {},
+    "postcss-cssnext": {
+      "features": {
+        "autoprefixer": {
+          "browsers": [
+            "> 1%",
+            "last 2 versions",
+            "not dead"
+          ],
+          "flexbox": "no-2009",
+          "grid": "autoplace"
+        },
+        "customProperties": {
+          "preserve": "computed",
+          "variables": {
+            "--lagrange-primary": "#00d4ff",
+            "--lagrange-secondary": "#7b2ff7",
+            "--lagrange-dark": "#0a0e27",
+            "--lagrange-accent": "#ff6b35",
+            "--lagrange-neutral": "#1a1f3a",
+            "--lagrange-success": "#00e676",
+            "--lagrange-warning": "#ffea00",
+            "--lagrange-danger": "#ff1744",
+            "--lagrange-info": "#448aff"
+          }
+        },
+        "customMedia": {
+          "extensions": {
+            "--phone": "(max-width: 480px)",
+            "--tablet": "(max-width: 768px)",
+            "--desktop": "(min-width: 1024px)",
+            "--wide": "(min-width: 1440px)",
+            "--ultrawide": "(min-width: 2560px)"
+          }
+        },
+        "colorFunction": {},
+        "colorHexAlpha": {},
+        "gray": {}
+      }
+    },
+    "postcss-calc": {
+      "precision": 5,
+      "preserve": false,
+      "warnWhenCannotResolve": true
+    },
+    "postcss-nesting": {},
+    "postcss-extend-rule": {
+      "onFunctionalSelector": "warn"
+    },
+    "postcss-custom-media": {
+      "importFrom": "./src/styles/media.css"
+    },
+    "postcss-selector-matches": {
+      "lineBreak": true
+    },
+    "postcss-custom-selectors": {
+      "extensions": {
+        "--fleet-card": ".fleet-card, .fleet-card--compact, .fleet-card--expanded",
+        "--ship-stat": ".ship-stat, .ship-stat--positive, .ship-stat--negative",
+        "--tactical-overlay": ".tactical-overlay, .tactical-overlay--combat, .tactical-overlay--scanning"
+      }
+    },
+    "postcss-color-function": {},
+    "postcss-color-rgba-fallback": {},
+    "postcss-pxtorem": {
+      "rootValue": 16,
+      "unitPrecision": 5,
+      "propList": [
+        "font",
+        "font-size",
+        "line-height",
+        "letter-spacing",
+        "margin",
+        "margin-*",
+        "padding",
+        "padding-*",
+        "width",
+        "height",
+        "max-width",
+        "max-height",
+        "min-width",
+        "min-height",
+        "top",
+        "left",
+        "right",
+        "bottom",
+        "gap"
+      ],
+      "selectorBlackList": [".no-rem"],
+      "replace": true,
+      "mediaQuery": false,
+      "minPixelValue": 2
+    },
+    "postcss-assets": {
+      "loadPaths": [
+        "src/assets/images",
+        "src/assets/icons",
+        "src/assets/fonts"
+      ],
+      "relative": true,
+      "cachebuster": true
+    },
+    "cssnano": {
+      "preset": [
+        "advanced",
+        {
+          "autoprefixer": false,
+          "discardComments": {
+            "removeAll": true
+          },
+          "reduceIdents": false,
+          "zindex": false,
+          "normalizeWhitespace": true,
+          "mergeRules": true,
+          "minifySelectors": true,
+          "minifyParams": true,
+          "colormin": true,
+          "convertValues": true,
+          "discardUnused": true,
+          "mergeLonghand": true,
+          "mergeIdents": true
+        }
+      ]
+    },
+    "postcss-reporter": {
+      "clearReportedMessages": true,
+      "throwError": false,
+      "formatter": "string"
+    }
+  }
+}

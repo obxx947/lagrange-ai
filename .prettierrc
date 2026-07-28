@@ -2,9 +2,75 @@
   "semi": true,
   "singleQuote": true,
   "tabWidth": 2,
-  "trailingComma": "es5",
+  "useTabs": false,
+  "trailingComma": "all",
   "printWidth": 120,
   "bracketSpacing": true,
   "arrowParens": "always",
-  "endOfLine": "crlf"
+  "endOfLine": "lf",
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": false,
+  "bracketSameLine": false,
+  "htmlWhitespaceSensitivity": "css",
+  "vueIndentScriptAndStyle": false,
+  "embeddedLanguageFormatting": "auto",
+  "singleAttributePerLine": false,
+  "proseWrap": "preserve",
+  "insertPragma": false,
+  "requirePragma": false,
+  "plugins": [
+    "prettier-plugin-organize-imports",
+    "prettier-plugin-packagejson",
+    "prettier-plugin-tailwindcss",
+    "prettier-plugin-astro",
+    "prettier-plugin-svelte",
+    "prettier-plugin-toml",
+    "prettier-plugin-sh"
+  ],
+  "overrides": [
+    {
+      "files": "*.json",
+      "options": {
+        "parser": "json",
+        "printWidth": 80,
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "parser": "markdown",
+        "proseWrap": "always",
+        "printWidth": 80
+      }
+    },
+    {
+      "files": "*.yaml",
+      "options": {
+        "parser": "yaml",
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": "*.css",
+      "options": {
+        "parser": "css",
+        "singleQuote": false
+      }
+    },
+    {
+      "files": ["*.html", "*.svelte", "*.vue", "*.astro"],
+      "options": {
+        "parser": "html",
+        "printWidth": 100
+      }
+    },
+    {
+      "files": "*.py",
+      "options": {
+        "tabWidth": 4,
+        "printWidth": 100
+      }
+    }
+  ]
 }

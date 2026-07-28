@@ -1,18 +1,151 @@
 # ============================================================
-# 拉格朗日AI — Docker 忽略规则
-# 即使不使用Docker部署，保留此文件作为规范参考
+# Lagrange Tactical AI - Docker Ignore Rules
+# Excludes unnecessary files from Docker build context
 # ============================================================
 
-__pycache__
-*.pyc
-*.db
-*.db-journal
-.env
-chroma_db/
-db_backup/
-node_modules/
-.git
+# ---- Python build artifacts ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+*.manifest
+*.spec
+pip-wheel-metadata/
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# ---- IDE and editors ----
 .vscode/
 .idea/
-exports/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ---- OS generated files ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ---- Node.js ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.jest-cache/
+
+# ---- Frontend build output ----
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.output/
+
+# ---- Databases and data ----
+*.db
+*.db-journal
+*.sqlite3
+*.sqlite
+db_backup/
+chroma_db/
+faiss_index.bin
+faiss_index/
+
+# ---- Environment and secrets ----
+.env
+.env.*
+!.env.example
+!.env.template
+*.key
+*.pem
+*.crt
+credentials*.json
+secrets.yaml
+secret*.yaml
+
+# ---- Logs ----
+logs/
 *.log
+*.log.*
+
+# ---- Testing and coverage ----
+.coverage
+.coverage.*
+htmlcov/
+.xml
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# ---- Git ----
+.git/
+.gitattributes
+.gitmodules
+.gitignore
+.gitkeep
+.github/
+
+# ---- Documentation build ----
+docs/_build/
+docs/_build_*/
+site/
+
+# ---- Docker ----
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+.docker/
+
+# ---- Kubernetes ----
+k8s/
+helm/
+charts/
+
+# ---- CI/CD ----
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+.circleci/
+
+# ---- Miscellaneous ----
+*.tmp
+*.temp
+*.bak
+*.orig
+*.patch
+.serene/
+exports/
+temp/
+tmp/
+.cache/
+archive/
+.history/

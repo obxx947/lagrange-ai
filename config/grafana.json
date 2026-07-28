@@ -1,0 +1,207 @@
+{
+  "dashboard": {
+    "uid": "lagrange-tactical-ai-dashboard",
+    "title": "Lagrange AI - Tactical Analysis Platform",
+    "description": "Comprehensive monitoring dashboard for the Infinite Lagrange fleet combat AI platform",
+    "tags": ["lagrange", "game-ai", "tactical", "fleet", "combat"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Request Rate",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{app=\"lagrange-agent\"}[5m])) by (endpoint)",
+            "legendFormat": "{{endpoint}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 15 } }
+        },
+        "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+      },
+      {
+        "id": 2,
+        "title": "API Latency (P50/P95/P99)",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{app=\"lagrange-agent\"}[5m]))",
+            "legendFormat": "P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{app=\"lagrange-agent\"}[5m]))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{app=\"lagrange-agent\"}[5m]))",
+            "legendFormat": "P99"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "s", "custom": { "lineWidth": 2 } } }
+      },
+      {
+        "id": 3,
+        "title": "Total Tokens Consumed",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 8, "w": 4, "h": 4 },
+        "targets": [{ "expr": "sum(lagrange_tokens_consumed_total)", "legendFormat": "Tokens" }],
+        "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" } } }
+      },
+      {
+        "id": 4,
+        "title": "Active Users (24h)",
+        "type": "stat",
+        "gridPos": { "x": 4, "y": 8, "w": 4, "h": 4 },
+        "targets": [{ "expr": "count(lagrange_active_users)", "legendFormat": "Users" }],
+        "fieldConfig": { "defaults": { "unit": "short" } }
+      },
+      {
+        "id": 5,
+        "title": "Battles Simulated (1h)",
+        "type": "stat",
+        "gridPos": { "x": 8, "y": 8, "w": 4, "h": 4 },
+        "targets": [{ "expr": "rate(lagrange_battles_simulated_total[1h]) * 3600", "legendFormat": "Battles/h" }],
+        "fieldConfig": { "defaults": { "unit": "short", "decimals": 1 } }
+      },
+      {
+        "id": 6,
+        "title": "Fleet Optimization Calls",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 8, "w": 4, "h": 4 },
+        "targets": [{ "expr": "rate(lagrange_fleet_optimizations_total[1h]) * 3600", "legendFormat": "Opt/h" }],
+        "fieldConfig": { "defaults": { "unit": "short", "decimals": 1 } }
+      },
+      {
+        "id": 7,
+        "title": "RAG Retrieval Hit Rate",
+        "type": "stat",
+        "gridPos": { "x": 16, "y": 8, "w": 4, "h": 4 },
+        "targets": [{
+          "expr": "sum(lagrange_rag_hits_total) / (sum(lagrange_rag_hits_total) + sum(lagrange_rag_misses_total)) * 100",
+          "legendFormat": "Hit Rate"
+        }],
+        "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 } }
+      },
+      {
+        "id": 8,
+        "title": "Database Size",
+        "type": "gauge",
+        "gridPos": { "x": 20, "y": 8, "w": 4, "h": 4 },
+        "targets": [{ "expr": "lagrange_db_size_bytes", "legendFormat": "DB Size" }],
+        "fieldConfig": { "defaults": { "unit": "decbytes", "min": 0 } }
+      },
+      {
+        "id": 9,
+        "title": "Error Rate by Endpoint",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+        "targets": [{
+          "expr": "sum(rate(http_errors_total{app=\"lagrange-agent\"}[5m])) by (endpoint) / sum(rate(http_requests_total{app=\"lagrange-agent\"}[5m])) by (endpoint) * 100",
+          "legendFormat": "{{endpoint}}"
+        }],
+        "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+        "thresholds": [{ "value": 1, "color": "green" }, { "value": 5, "color": "yellow" }, { "value": 10, "color": "red" }]
+      },
+      {
+        "id": 10,
+        "title": "DeepSeek API Latency",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+        "targets": [{
+          "expr": "histogram_quantile(0.95, rate(lagrange_deepseek_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "DeepSeek P95"
+        }],
+        "fieldConfig": { "defaults": { "unit": "s" } }
+      },
+      {
+        "id": 11,
+        "title": "Ship Database - Query Distribution",
+        "type": "piechart",
+        "gridPos": { "x": 0, "y": 20, "w": 8, "h": 8 },
+        "targets": [{
+          "expr": "sum(lagrange_ship_queries_total) by (ship_class)",
+          "legendFormat": "{{ship_class}}"
+        }],
+        "options": { "displayLabels": ["percent", "name"], "legend": { "displayMode": "right" } }
+      },
+      {
+        "id": 12,
+        "title": "Fleet Power Distribution",
+        "type": "barchart",
+        "gridPos": { "x": 8, "y": 20, "w": 8, "h": 8 },
+        "targets": [{
+          "expr": "lagrange_fleet_power_distribution",
+          "legendFormat": "Power Level"
+        }],
+        "fieldConfig": { "defaults": { "unit": "short" } }
+      },
+      {
+        "id": 13,
+        "title": "Cache Hit Ratio",
+        "type": "timeseries",
+        "gridPos": { "x": 16, "y": 20, "w": 8, "h": 8 },
+        "targets": [{
+          "expr": "rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) * 100",
+          "legendFormat": "Redis Cache Hit %"
+        }],
+        "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } }
+      },
+      {
+        "id": 14,
+        "title": "Recent Battle Outcomes",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
+        "targets": [{
+          "expr": "lagrange_battle_outcome_summary",
+          "format": "table",
+          "legendFormat": ""
+        }]
+      },
+      {
+        "id": 15,
+        "title": "System Resources",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+        "targets": [
+          { "expr": "process_resident_memory_bytes{app=\"lagrange-agent\"}", "legendFormat": "Memory" },
+          { "expr": "rate(process_cpu_seconds_total{app=\"lagrange-agent\"}[1m]) * 100", "legendFormat": "CPU %" }
+        ],
+        "fieldConfig": { "defaults": { "custom": { "lineWidth": 2 } } }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "query",
+          "query": "production, staging, development",
+          "current": { "text": "production", "value": "production" },
+          "label": "Environment"
+        },
+        {
+          "name": "endpoint",
+          "type": "query",
+          "query": "label_values(http_requests_total, endpoint)",
+          "label": "API Endpoint",
+          "multi": true
+        }
+      ]
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "15s", "30s", "1m", "5m"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h"]
+    },
+    "editable": true,
+    "graphTooltip": 1
+  },
+  "folderUid": "lagrange-folder",
+  "overwrite": true
+}

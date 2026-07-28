@@ -1,0 +1,91 @@
+# ============================================================
+# Lagrange Tactical AI - Code Owners
+# Automated code review assignment for GitHub
+# ============================================================
+# Order is important; the last matching pattern takes precedence.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ---- Global owners (fallback) ----
+*                                                   @lagrange-ai/core-team
+
+# ---- Python backend ----
+*.py                                                @lagrange-ai/python-team
+main.py                                             @lagrange-ai/python-team @lagrange-ai/lead
+config.py                                           @lagrange-ai/python-team
+database.py                                         @lagrange-ai/python-team
+battle_engine.py                                    @lagrange-ai/battle-engine-team
+fleet_optimizer.py                                  @lagrange-ai/battle-engine-team
+rag_service.py                                      @lagrange-ai/ai-team
+chat_service.py                                     @lagrange-ai/ai-team
+game_knowledge.py                                   @lagrange-ai/ai-team
+auth_service.py                                     @lagrange-ai/python-team
+admin_routes.py                                     @lagrange-ai/python-team
+api_routes.py                                       @lagrange-ai/python-team
+export_ships.py                                     @lagrange-ai/python-team
+
+# ---- C++/Rust extensions ----
+*.cpp                                               @lagrange-ai/cpp-team
+*.hpp                                               @lagrange-ai/cpp-team
+*.h                                                 @lagrange-ai/cpp-team
+*.rs                                                @lagrange-ai/rust-team
+Cargo.toml                                          @lagrange-ai/rust-team
+
+# ---- JavaScript/TypeScript frontend ----
+*.js                                                @lagrange-ai/frontend-team
+*.jsx                                               @lagrange-ai/frontend-team
+*.ts                                                @lagrange-ai/frontend-team
+*.tsx                                               @lagrange-ai/frontend-team
+*.vue                                               @lagrange-ai/frontend-team
+*.svelte                                            @lagrange-ai/frontend-team
+parse_ships.js                                      @lagrange-ai/frontend-team
+webpack.config.js                                   @lagrange-ai/frontend-team
+
+# ---- CSS/Styling ----
+*.css                                               @lagrange-ai/frontend-team
+*.scss                                              @lagrange-ai/frontend-team
+*.less                                              @lagrange-ai/frontend-team
+
+# ---- Configuration files ----
+requirements.txt                                    @lagrange-ai/devops-team
+requirements-dev.txt                                @lagrange-ai/devops-team
+Dockerfile*                                         @lagrange-ai/devops-team
+docker-compose*.yml                                 @lagrange-ai/devops-team
+.dockerignore                                       @lagrange-ai/devops-team
+Makefile                                            @lagrange-ai/devops-team
+Jenkinsfile                                         @lagrange-ai/devops-team
+.gitlab-ci.yml                                      @lagrange-ai/devops-team
+
+# ---- Kubernetes manifests ----
+k8s/*                                               @lagrange-ai/devops-team @lagrange-ai/infra-team
+k8s/deployment.yaml                                 @lagrange-ai/devops-team
+k8s/service.yaml                                    @lagrange-ai/devops-team
+
+# ---- Monitoring ----
+config/prometheus.yml                               @lagrange-ai/devops-team
+config/grafana.json                                 @lagrange-ai/devops-team
+config/redis.conf                                   @lagrange-ai/devops-team
+config/kafka.properties                             @lagrange-ai/devops-team
+
+# ---- Documentation ----
+docs/*                                              @lagrange-ai/docs-team
+README.md                                           @lagrange-ai/docs-team
+README.rst                                          @lagrange-ai/docs-team
+README.adoc                                         @lagrange-ai/docs-team
+CONTRIBUTING.md                                     @lagrange-ai/docs-team
+SECURITY.md                                         @lagrange-ai/security-team
+CODEOWNERS                                          @lagrange-ai/lead
+CHANGELOG.md                                        @lagrange-ai/docs-team
+
+# ---- Security-sensitive files ----
+.env*                                               @lagrange-ai/security-team @lagrange-ai/lead
+certs/*                                             @lagrange-ai/security-team
+.github/workflows/*                                 @lagrange-ai/devops-team
+
+# ---- Data files ----
+lagrange_docs/**                                    @lagrange-ai/data-team
+lagrange_docs/ship_database.json                    @lagrange-ai/data-team @lagrange-ai/lead
+
+# ---- Tests ----
+tests/**                                            @lagrange-ai/python-team
+test_*.py                                           @lagrange-ai/python-team
+*_test.py                                           @lagrange-ai/python-team

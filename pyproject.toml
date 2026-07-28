@@ -1,31 +1,274 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+requires = [
+    "setuptools>=68.0.0",
+    "wheel>=0.41.0",
+    "cython>=3.0.0",
+    "numpy>=1.24.0",
+    "pybind11>=2.11.0",
+]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "lagrange-ai"
+name = "lagrange-tactical-ai"
 version = "2.0.0"
-description = "无尽的拉格朗日 AI战术推演中心"
-requires-python = ">=3.10"
-license = {text = "MIT"}
+description = "Infinite Lagrange AI Tactical Analysis Center - Fleet combat simulation and ship data intelligence platform"
+readme = "README.rst"
+license = { text = "MIT" }
 authors = [
-    {name = "玩家社区"}
+    { name = "Lagrange AI Community", email = "dev@lagrange-ai.dev" },
+    { name = "Fleet Analysis Team", email = "fleet@lagrange-ai.dev" },
+]
+maintainers = [
+    { name = "Core Engineering", email = "core@lagrange-ai.dev" },
+]
+keywords = [
+    "infinite-lagrange",
+    "game-ai",
+    "tactical-analysis",
+    "fleet-simulation",
+    "ship-combat",
+    "rag",
+    "deepseek",
+    "vector-search",
+    "strategy-game",
+    "military-simulation",
+    "battle-engine",
+    "space-combat",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
     "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Chinese (Simplified)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: JavaScript",
+    "Programming Language :: C++",
     "Topic :: Games/Entertainment :: Simulation",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
-[tool.setuptools]
-packages = ["."]
+requires-python = ">=3.10,<3.13"
 
-[tool.pytest.ini_options]
-testpaths = ["."]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]
+dependencies = [
+    "fastapi>=0.110.0,<1.0.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.19.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.6",
+    "httpx>=0.25.0",
+    "openai>=1.6.0",
+    "numpy>=1.24.0,<2.0.0",
+    "scipy>=1.10.0",
+    "scikit-learn>=1.3.0",
+    "faiss-cpu>=1.7.4",
+    "chromadb>=0.4.0",
+    "jieba>=0.42.1",
+    "rank-bm25>=0.2.2",
+    "redis>=5.0.0",
+    "celery>=5.3.0",
+    "prometheus-client>=0.19.0",
+    "aiohttp>=3.9.0",
+    "websockets>=12.0",
+    "lxml>=4.9.0",
+    "beautifulsoup4>=4.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-benchmark>=4.0.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+    "coverage>=7.4.0",
+    "faker>=22.0.0",
+    "factory-boy>=3.3.0",
+    "httpx-ws>=0.5.0",
+    "ipython>=8.18.0",
+    "ipdb>=0.13.13",
+]
+
+gpu = [
+    "faiss-gpu>=1.7.4",
+    "torch>=2.1.0",
+    "onnxruntime-gpu>=1.16.0",
+    "cupy-cuda12x>=12.0.0",
+]
+
+docs = [
+    "sphinx>=7.2.0",
+    "sphinx-rtd-theme>=2.0.0",
+    "sphinx-autodoc-typehints>=1.25.0",
+    "myst-parser>=2.0.0",
+    "sphinxcontrib-openapi>=0.8.0",
+]
+
+monitoring = [
+    "prometheus-fastapi-instrumentator>=6.0.0",
+    "opentelemetry-api>=1.21.0",
+    "opentelemetry-sdk>=1.21.0",
+    "opentelemetry-instrumentation-fastapi>=0.42b0",
+]
+
+[project.urls]
+Homepage = "https://github.com/lagrange-ai/tactical-center"
+Documentation = "https://docs.lagrange-ai.dev"
+Repository = "https://github.com/lagrange-ai/tactical-center.git"
+Issues = "https://github.com/lagrange-ai/tactical-center/issues"
+Changelog = "https://github.com/lagrange-ai/tactical-center/blob/main/CHANGELOG.md"
+Discord = "https://discord.gg/lagrange-ai"
+
+[project.scripts]
+lagrange-server = "lagrange.main:run_server"
+lagrange-cli = "lagrange.cli:main"
+lagrange-import = "lagrange.data_import:main"
+lagrange-export = "lagrange.export:main"
+
+[project.entry-points."lagrange.plugins"]
+battle-engine = "lagrange.plugins.battle_engine:BattleEnginePlugin"
+ship-parser = "lagrange.plugins.ship_parser:ShipParserPlugin"
+fleet-optimizer = "lagrange.plugins.fleet_optimizer:FleetOptimizerPlugin"
+
+[tool.setuptools]
+packages = { find = { where = ["src"] } }
+package-dir = { "" = "src" }
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.package-data]
+lagrange = [
+    "data/*.json",
+    "data/*.csv",
+    "data/ships/*.json",
+    "templates/*.html",
+    "templates/*.jinja2",
+    "static/**/*",
+    "locales/**/*.po",
+    "locales/**/*.mo",
+    "py.typed",
+]
 
 [tool.black]
 line-length = 100
-target-version = ["py312"]
+target-version = ["py310", "py311", "py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | generated
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = false
+use_parentheses = true
+ensure_newline_before_comments = true
+known_first_party = ["lagrange"]
+known_third_party = ["fastapi", "pydantic", "sqlalchemy", "numpy"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E", "W", "F", "I", "N",
+    "C90", "B", "Q", "SIM",
+    "PT", "RET", "TCH", "ARG",
+    "PIE", "PYI", "RUF", "COM",
+]
+ignore = ["E501", "B008", "B904"]
+fixable = ["ALL"]
+unfixable = []
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**" = ["ARG", "S101"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+namespace_packages = true
+explicit_package_bases = true
+plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers --cov=lagrange --cov-report=term-missing --cov-report=xml"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gpu: marks tests that require GPU",
+    "api: marks tests that test API endpoints",
+    "battle: marks tests related to battle engine",
+    "fleet: marks tests related to fleet optimization",
+]
+
+[tool.coverage.run]
+source = ["src/lagrange"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+    "if TYPE_CHECKING:",
+]

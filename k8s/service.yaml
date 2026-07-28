@@ -1,0 +1,48 @@
+# ============================================================
+# Lagrange Tactical AI - Kubernetes Service
+# Internal service exposing the Lagrange API and metrics
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: lagrange-agent-svc
+  namespace: lagrange
+  labels:
+    app: lagrange-agent
+    component: backend
+    tier: application
+    game: infinite-lagrange
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-health-check-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-health-check-path: "/health"
+    service.beta.kubernetes.io/aws-load-balancer-health-check-port: "3000"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  type: ClusterIP
+  selector:
+    app: lagrange-agent
+    version: v2
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+    appProtocol: http
+  - name: metrics
+    port: 9090
+    targetPort: 3000
+    protocol: TCP
+    appProtocol: http
+  - name: websocket
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+  publishNotReadyAddresses: false
+  internalTrafficPolicy: Cluster

@@ -1,0 +1,121 @@
+{
+  # ============================================================================
+  # Lagrange Tactical AI - Application Configuration
+  # Format: HJSON (Human JSON - supports comments, no quotes needed on keys)
+  # ============================================================================
+
+  # ---- Application Identity ----
+  app: {
+    name: Lagrange Tactical AI
+    version: 2.1.0
+    codename: Io-Release
+    description: Infinite Lagrange fleet composition and battle simulation engine
+    environment: development   # development | staging | production
+    debug: true
+    log_level: INFO           # DEBUG | INFO | WARN | ERROR | CRITICAL
+    language: zh-CN
+  }
+
+  # ---- Server Configuration ----
+  server: {
+    host: 127.0.0.1
+    port: 8080
+    workers: 4
+    timeout: 30               # seconds
+    max_request_size: 16MB
+    cors: {
+      enabled: true
+      origins: [http://localhost:3000, http://127.0.0.1:3000]
+      methods: [GET, POST, PUT, DELETE, OPTIONS]
+      headers: [Content-Type, Authorization]
+    }
+    rate_limit: {
+      enabled: true
+      requests_per_minute: 120
+      burst: 20
+    }
+  }
+
+  # ---- Database Configuration ----
+  database: {
+    engine: sqlite             # sqlite | postgresql | mysql
+    path: data/lagrange.db
+    pool_size: 5
+    timeout: 10
+    backup: {
+      enabled: true
+      interval_hours: 24
+      location: backups/
+      keep_count: 7
+    }
+  }
+
+  # ---- AI Engine Configuration ----
+  ai: {
+    model_path: models/tactical_v3.pt
+    simulation: {
+      max_rounds: 600
+      tick_rate: 20
+      default_seed: 42
+      parallel_sims: 8
+    }
+    recommendation: {
+      max_command_value: 500
+      fleet_size_range: [3, 12]
+      consider_counter_comps: true
+    }
+    cache: {
+      enabled: true
+      ttl_seconds: 3600
+      max_entries: 10000
+    }
+  }
+
+  # ---- Game Data Configuration ----
+  game_data: {
+    ship_stats_source: data/ships.json5
+    weapon_catalog: data/weapons.json5
+    module_effects: data/modules.json5
+    update_interval_hours: 168  # weekly
+    auto_update: false
+  }
+
+  # ---- Battle Report Configuration ----
+  reports: {
+    output_dir: reports/
+    template: templates/fleet_report.jinja
+    formats: [html, json, pdf]
+    include_ai_analysis: true
+    retention_days: 90
+  }
+
+  # ---- Monitoring & Health ----
+  monitoring: {
+    health_check_interval_seconds: 30
+    metrics_port: 9090
+    enable_profiler: true
+    log_requests: true
+    alert_thresholds: {
+      cpu_percent: 85
+      memory_percent: 80
+      disk_percent: 90
+      response_time_ms: 2000
+    }
+  }
+
+  # ---- Security ----
+  security: {
+    api_keys_enabled: false
+    jwt_secret_env: LAGRANGE_JWT_SECRET
+    session_timeout_minutes: 60
+    max_login_attempts: 5
+    require_https_in_production: true
+  }
+
+  # ---- External Integrations ----
+  integrations: {
+    discord_webhook_url_env: LAGRANGE_DISCORD_WEBHOOK
+    slack_webhook_url_env: LAGRANGE_SLACK_WEBHOOK
+    analytics_enabled: false
+  }
+}

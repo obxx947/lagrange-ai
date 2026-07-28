@@ -1,0 +1,297 @@
+{
+  // ========================================================================
+  // Lagrange Tactical AI - Ship Configuration Database
+  // Format: JSON5 (supports comments, trailing commas, unquoted keys)
+  // Exported ship data for Infinite Lagrange tactical analysis
+  // ========================================================================
+
+  version: "2.1.0",
+  generated_at: "2026-07-27T12:00:00Z",
+  total_ships: 5,
+
+  ships: [
+    {
+      // ---- Io Class Battle Cruiser ----
+      id: "io_class",
+      name: "Io",
+      ship_class: "Battle Cruiser",
+      tier: 2,
+      rating: 4,
+      faction: "Jupiter Industries",
+
+      // Hull & Defense
+      hp: 86500,
+      armor: 18500,
+      shield: 42000,
+      energy_defense: 12000,
+      durability_rating: 7800,
+
+      // Mobility
+      speed: 520,
+      evasion: 12.5,
+      warp_speed: 1800,
+      turn_rate: 28,
+
+      // Offense
+      weapon_dps: 12400,
+      accuracy: 82,
+      crit_rate: 8.5,
+      crit_dmg: 1.8,
+      weapon_range: 4200,
+      firepower_rating: 9100,
+
+      // Utility
+      energy: 2800,
+      cargo: 450,
+      pop_cost: 18,
+      build_cost: 32000,
+      build_time: 480,
+
+      // Weapons
+      weapons: [
+        { type: "Ion Cannon", name: "Io Heavy Ion Cannon", damage: 5200, range: 3800, slots: 2 },
+        { type: "Railgun", name: "Jupiter Mk3 Railgun", damage: 3800, range: 4600, slots: 2 },
+        { type: "Missile", name: "Thunderbolt Missile Pod", damage: 3400, range: 5000, slots: 1 },
+      ],
+
+      // Special abilities
+      abilities: [
+        { name: "Ion Overcharge", description: "+30% weapon damage for 15s, 90s cooldown" },
+        { name: "Emergency Shield", description: "Regenerate 25% shield instantly, 120s cooldown" },
+      ],
+
+      tags: ["ion-cannon", "heavy-assault", "alpha-strike", "jupiter"],
+      combat_score: 8850,
+    },
+
+    {
+      // ---- Storm Class Destroyer ----
+      id: "storm_class",
+      name: "Storm",
+      ship_class: "Destroyer",
+      tier: 1,
+      rating: 3,
+      faction: "Antonios Consortium",
+
+      // Hull & Defense
+      hp: 42000,
+      armor: 8500,
+      shield: 18000,
+      energy_defense: 6000,
+      durability_rating: 3200,
+
+      // Mobility
+      speed: 780,
+      evasion: 24.0,
+      warp_speed: 2200,
+      turn_rate: 42,
+
+      // Offense
+      weapon_dps: 7800,
+      accuracy: 75,
+      crit_rate: 12.0,
+      crit_dmg: 1.6,
+      weapon_range: 3200,
+      firepower_rating: 5600,
+
+      // Utility
+      energy: 1500,
+      cargo: 220,
+      pop_cost: 8,
+      build_cost: 12000,
+      build_time: 180,
+
+      // Weapons
+      weapons: [
+        { type: "Laser", name: "Pulse Laser Array", damage: 3400, range: 2800, slots: 2 },
+        { type: "Cannon", name: "Twin Auto-Cannon", damage: 4400, range: 2400, slots: 2 },
+      ],
+
+      abilities: [
+        { name: "Rapid Fire", description: "+50% attack speed for 10s, 60s cooldown" },
+      ],
+
+      tags: ["fast-attack", "high-evasion", "antonios", "destroyer"],
+      combat_score: 5200,
+    },
+
+    {
+      // ---- Titan Class Carrier ----
+      id: "titan_class",
+      name: "Titan",
+      ship_class: "Carrier",
+      tier: 3,
+      rating: 5,
+      faction: "NOMA Shipping Group",
+
+      // Hull & Defense
+      hp: 120000,
+      armor: 25000,
+      shield: 65000,
+      energy_defense: 18000,
+      durability_rating: 12000,
+
+      // Mobility
+      speed: 320,
+      evasion: 5.0,
+      warp_speed: 1400,
+      turn_rate: 15,
+
+      // Offense
+      weapon_dps: 6200,
+      accuracy: 68,
+      crit_rate: 5.0,
+      crit_dmg: 2.0,
+      weapon_range: 5500,
+      firepower_rating: 4500,
+
+      // Utility
+      energy: 5000,
+      cargo: 1200,
+      pop_cost: 32,
+      build_cost: 85000,
+      build_time: 900,
+
+      // Weapons
+      weapons: [
+        { type: "Missile", name: "NOMA LRM Battery", damage: 2800, range: 6000, slots: 3 },
+        { type: "Point Defense", name: "Guardian CIWS", damage: 1200, range: 1500, slots: 2 },
+        { type: "Fighter Bay", name: "Titan Hangar Bay", damage: 2200, range: 4000, slots: 1 },
+      ],
+
+      abilities: [
+        { name: "Fighter Swarm", description: "Deploy 12 fighters for 30s, 180s cooldown" },
+        { name: "Repair Drones", description: "Heal all allied ships by 8% HP, 90s cooldown" },
+        { name: "Fleet Command", description: "+15% accuracy to all allied ships within 8000m" },
+      ],
+
+      tags: ["carrier", "fleet-command", "fighter-bay", "noma", "capital-ship"],
+      combat_score: 9500,
+    },
+
+    {
+      // ---- Phantom Class Corvette ----
+      id: "phantom_class",
+      name: "Phantom",
+      ship_class: "Corvette",
+      tier: 1,
+      rating: 3,
+      faction: "Jupiter Industries",
+
+      // Hull & Defense
+      hp: 18500,
+      armor: 3200,
+      shield: 8500,
+      energy_defense: 4000,
+      durability_rating: 1200,
+
+      // Mobility
+      speed: 1050,
+      evasion: 38.0,
+      warp_speed: 2800,
+      turn_rate: 65,
+
+      // Offense
+      weapon_dps: 5200,
+      accuracy: 70,
+      crit_rate: 18.0,
+      crit_dmg: 1.5,
+      weapon_range: 1800,
+      firepower_rating: 3800,
+
+      // Utility
+      energy: 800,
+      cargo: 80,
+      pop_cost: 4,
+      build_cost: 5000,
+      build_time: 90,
+
+      // Weapons
+      weapons: [
+        { type: "Plasma", name: "Phantom Plasma Cutter", damage: 5200, range: 1600, slots: 1 },
+      ],
+
+      abilities: [
+        { name: "Cloaking Field", description: "Become untargetable for 8s, 120s cooldown" },
+        { name: "High-Speed Maneuver", description: "+60% evasion for 5s, 45s cooldown" },
+      ],
+
+      tags: ["stealth", "high-speed", "glass-cannon", "jupiter", "corvette"],
+      combat_score: 3400,
+    },
+
+    {
+      // ---- Guardian Class Frigate ----
+      id: "guardian_class",
+      name: "Guardian",
+      ship_class: "Frigate",
+      tier: 2,
+      rating: 4,
+      faction: "Antonios Consortium",
+
+      // Hull & Defense
+      hp: 55000,
+      armor: 14000,
+      shield: 32000,
+      energy_defense: 15000,
+      durability_rating: 5500,
+
+      // Mobility
+      speed: 480,
+      evasion: 15.0,
+      warp_speed: 1600,
+      turn_rate: 32,
+
+      // Offense
+      weapon_dps: 4500,
+      accuracy: 78,
+      crit_rate: 7.0,
+      crit_dmg: 1.7,
+      weapon_range: 3500,
+      firepower_rating: 3200,
+
+      // Utility
+      energy: 2200,
+      cargo: 350,
+      pop_cost: 12,
+      build_cost: 22000,
+      build_time: 300,
+
+      // Weapons
+      weapons: [
+        { type: "Laser", name: "Guardian Defense Laser", damage: 2500, range: 3200, slots: 2 },
+        { type: "Point Defense", name: "Sentinel Flak Array", damage: 2000, range: 1800, slots: 2 },
+      ],
+
+      abilities: [
+        { name: "Defense Matrix", description: "Redirect 40% damage from allies to self for 12s, 90s cooldown" },
+        { name: "Shield Generator", description: "Grant 15% max shield to all allies within 5000m, 60s cooldown" },
+      ],
+
+      tags: ["defensive", "fleet-support", "shield-tank", "antonios", "frigate"],
+      combat_score: 6100,
+    },
+  ],
+
+  // ---- Module Reference Data ----
+  modules_catalog: {
+    weapon_types: [
+      "Ion Cannon", "Railgun", "Missile", "Laser", "Cannon",
+      "Plasma", "Point Defense", "Fighter Bay",
+    ],
+    damage_types: [
+      "Energy", "Kinetic", "Explosive", "Thermal",
+    ],
+  },
+
+  // ---- Faction Information ----
+  factions: {
+    jupiter:      { name: "Jupiter Industries", color: "#60a5fa", specialty: "Energy weapons" },
+    antonios:     { name: "Antonios Consortium", color: "#f59e0b", specialty: "Kinetic weapons" },
+    noma:         { name: "NOMA Shipping Group", color: "#22c55e", specialty: "Carriers and logistics" },
+  },
+
+  // ---- Balance Notes (development reference) ----
+  _balance_notes: "Tier 3 ships should have roughly 3x the combat score of Tier 1 ships.",
+  _last_updated: "2026-07-27",
+}

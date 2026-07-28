@@ -1,0 +1,408 @@
+openapi: "3.0.3"
+info:
+  title: "Lagrange Tactical AI - API"
+  description: |
+    # Infinite Lagrange Tactical Analysis Center API
+    
+    Comprehensive REST API for the Lagrange AI fleet combat analysis platform.
+    Integrates ship database querying, battle simulation, fleet optimization,
+    and RAG-powered tactical analysis using the DeepSeek LLM.
+    
+    ## Authentication
+    All endpoints except `/api/register` and `/api/login` require a valid JWT token.
+    Pass the token in the Authorization header: `Bearer <token>`
+    
+    ## Rate Limiting
+    - Production: 10 requests per hour per user
+    - Development: 100 requests per hour per user
+    
+    ## Token Economy
+    - New users receive 10,000 free tokens
+    - Chat: 1 token per message
+    - Battle simulation: 5 tokens per simulation
+    - Fleet optimization: 3 tokens per analysis
+  version: "2.0.0"
+  contact:
+    name: "Lagrange AI Community"
+    email: "dev@lagrange-ai.dev"
+    url: "https://discord.gg/lagrange-ai"
+  license:
+    name: "MIT"
+    url: "https://opensource.org/licenses/MIT"
+
+servers:
+  - url: "https://api.lagrange.example.com"
+    description: "Production API server"
+  - url: "http://127.0.0.1:3000"
+    description: "Local development server"
+
+tags:
+  - name: "Auth"
+    description: "Authentication and user management"
+  - name: "Ships"
+    description: "Ship database querying (169 ship catalog)"
+  - name: "Battle"
+    description: "Battle simulation and combat analysis"
+  - name: "Fleet"
+    description: "Fleet composition and optimization"
+  - name: "AI Chat"
+    description: "RAG-powered AI tactical advisor"
+  - name: "Admin"
+    description: "Administrative endpoints (local only)"
+
+paths:
+  /health:
+    get:
+      tags: ["System"]
+      summary: "Health check endpoint"
+      description: "Returns the current health status of the Lagrange AI service"
+      operationId: healthCheck
+      responses:
+        "200":
+          description: "Service is healthy"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  version:
+                    type: string
+                    example: "2.0.0"
+                  database:
+                    type: string
+                    example: "connected"
+                  rag_index:
+                    type: string
+                    example: "ready"
+
+  /metrics:
+    get:
+      tags: ["System"]
+      summary: "Prometheus metrics endpoint"
+      description: "Exposes application metrics in Prometheus format"
+      operationId: getMetrics
+      responses:
+        "200":
+          description: "Metrics in text/plain Prometheus format"
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/register:
+    post:
+      tags: ["Auth"]
+      summary: "Register a new user"
+      description: "Create a new Lagrange AI account with 10,000 free tokens"
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                  example: "fleet_commander"
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  format: password
+                  example: "securePassword123"
+                email:
+                  type: string
+                  format: email
+                  example: "commander@example.com"
+      responses:
+        "201":
+          description: "User registered successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  user_id:
+                    type: integer
+                    example: 42
+                  tokens:
+                    type: integer
+                    example: 10000
+        "409":
+          description: "Username already exists"
+
+  /api/login:
+    post:
+      tags: ["Auth"]
+      summary: "User login"
+      description: "Authenticate and receive a JWT token valid for 7 days"
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: "fleet_commander"
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: "Login successful"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIs..."
+                  token_type:
+                    type: string
+                    example: "bearer"
+                  expires_in:
+                    type: integer
+                    example: 604800
+        "401":
+          description: "Invalid credentials"
+
+  /api/user/me:
+    get:
+      tags: ["Auth"]
+      summary: "Get current user info"
+      description: "Returns the authenticated user's profile and token balance"
+      operationId: getUserInfo
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: "User information"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                  username:
+                    type: string
+                  tokens_remaining:
+                    type: integer
+                  total_chats:
+                    type: integer
+                  battles_simulated:
+                    type: integer
+                  registered_at:
+                    type: string
+                    format: date-time
+
+  /api/ships:
+    get:
+      tags: ["Ships"]
+      summary: "List all ships"
+      description: "Query the complete database of 169 ships with filtering and pagination"
+      operationId: listShips
+      parameters:
+        - name: class
+          in: query
+          schema:
+            type: string
+            enum: [frigate, destroyer, cruiser, battlecruiser, battleship, carrier, supercarrier, corvette, fighter]
+          example: "destroyer"
+        - name: faction
+          in: query
+          schema:
+            type: string
+            example: "NOMA"
+        - name: weapon_type
+          in: query
+          schema:
+            type: string
+            enum: [energy, kinetic, missile, hybrid, carrier_based]
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: "Search by ship name"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        "200":
+          description: "Paginated ship list"
+
+  /api/ships/{ship_id}:
+    get:
+      tags: ["Ships"]
+      summary: "Get ship details"
+      description: "Get detailed information about a specific ship by ID"
+      operationId: getShip
+      parameters:
+        - name: ship_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Detailed ship information"
+        "404":
+          description: "Ship not found"
+
+  /api/chat:
+    post:
+      tags: ["AI Chat"]
+      summary: "AI tactical advisor chat"
+      description: "Send a tactical question and receive an AI-powered response using RAG"
+      operationId: chatWithAI
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  example: "What is the best fleet composition to counter a carrier-heavy enemy?"
+                context:
+                  type: object
+                  properties:
+                    fleet_ids:
+                      type: array
+                      items:
+                        type: integer
+        responses:
+          "200":
+            description: "AI response with tactical analysis"
+          "402":
+            description: "Insufficient tokens"
+
+  /api/simulator/save:
+    post:
+      tags: ["Fleet"]
+      summary: "Save a fleet composition"
+      operationId: saveFleet
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, ships]
+              properties:
+                name:
+                  type: string
+                ships:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      ship_id:
+                        type: integer
+                      count:
+                        type: integer
+      responses:
+        "201":
+          description: "Fleet saved"
+
+  /api/simulator/analyze:
+    post:
+      tags: ["Battle"]
+      summary: "Analyze fleet combat"
+      description: "Run a tactical analysis comparing two fleet compositions"
+      operationId: analyzeFleet
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attacker_fleet_id, defender_fleet_id]
+              properties:
+                attacker_fleet_id:
+                  type: integer
+                defender_fleet_id:
+                  type: integer
+                battle_rounds:
+                  type: integer
+                  default: 120
+      responses:
+        "200":
+          description: "Battle analysis results"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  winner:
+                    type: string
+                  survival_rate:
+                    type: number
+                  damage_dealt:
+                    type: number
+                  tactical_advice:
+                    type: string
+
+  /api/admin/recharge:
+    post:
+      tags: ["Admin"]
+      summary: "Recharge user tokens (admin only)"
+      operationId: rechargeTokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, amount]
+              properties:
+                user_id:
+                  type: integer
+                amount:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000
+      responses:
+        "200":
+          description: "Recharge successful"
+        "403":
+          description: "Access denied (not localhost)"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT token from /api/login"

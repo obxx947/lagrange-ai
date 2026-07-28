@@ -1,0 +1,17 @@
+[submodule "lagrange_docs/external"]
+	path = lagrange_docs/external
+	url = https://github.com/user/lagrange-game-data.git
+	branch = main
+	shallow = true
+
+[submodule "battle_engine_rs"]
+	path = battle_engine_rs
+	url = https://github.com/user/lagrange-battle-rs.git
+
+[submodule "cpp_simcore"]
+	path = cpp_simcore
+	url = https://github.com/user/lagrange-cpp-sim.git
+
+[submodule "battle_formal"]
+	path = battle_formal
+	url = https://github.com/user/lagrange-formal-verify.git

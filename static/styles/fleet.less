@@ -1,0 +1,494 @@
+// ============================================================================
+// Lagrange Tactical AI - Fleet Management Page Styles
+// Less CSS preprocessor with variables, mixins, and nesting
+// ============================================================================
+
+// ---- Variables ----
+@bg-primary:       #0a0e1a;
+@bg-card:          #111827;
+@bg-header:        #0f1420;
+@border-color:     #1e3a8a;
+@border-light:     #1e293b;
+@text-primary:     #d0d8f0;
+@text-secondary:   #93c5fd;
+@text-muted:       #64748b;
+@accent:           #60a5fa;
+@accent-hover:     #3b82f6;
+@danger:           #ef4444;
+@success:          #22c55e;
+@warning:          #f59e0b;
+@info:            #8b5cf6;
+
+@font-family:      'Segoe UI', 'Microsoft YaHei', sans-serif;
+@border-radius-sm: 4px;
+@border-radius-md: 8px;
+@border-radius-lg: 12px;
+@transition-fast:  0.15s ease;
+@transition-normal: 0.25s ease;
+@shadow-card:      0 4px 16px rgba(0, 0, 0, 0.3);
+
+// ---- Mixins ----
+.flex-center() {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between() {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-base() {
+  background: @bg-card;
+  border: 1px solid @border-color;
+  border-radius: @border-radius-md;
+  padding: 18px;
+}
+
+.text-ellipsis() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ---- Global Reset ----
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: @bg-primary;
+  font-family: @font-family;
+  color: @text-primary;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+// ---- Page Header ----
+.fleet-page-header {
+  text-align: center;
+  padding: 24px 20px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, @bg-card 0%, lighten(@bg-card, 5%) 50%, @bg-card 100%);
+  border: 1px solid @border-color;
+  border-radius: @border-radius-lg;
+
+  h1 {
+    color: @accent;
+    font-size: 26px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    color: @text-secondary;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+}
+
+// ---- Fleet Container ----
+.fleet-container {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 20px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---- Fleet Main Area ----
+.fleet-main {
+  .fleet-toolbar {
+    .flex-between();
+    .card-base();
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    .toolbar-left {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .fleet-name-input {
+      background: darken(@bg-card, 5%);
+      border: 1px solid @border-light;
+      border-radius: @border-radius-sm;
+      color: @text-primary;
+      padding: 8px 14px;
+      font-size: 14px;
+      min-width: 200px;
+
+      &:focus {
+        outline: none;
+        border-color: @accent;
+      }
+    }
+
+    .btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: @border-radius-sm;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+      color: #fff;
+      transition: background @transition-fast;
+
+      &-primary {
+        background: @accent;
+        &:hover { background: @accent-hover; }
+      }
+
+      &-danger {
+        background: @danger;
+        &:hover { background: darken(@danger, 10%); }
+      }
+
+      &-success {
+        background: @success;
+        &:hover { background: darken(@success, 10%); }
+      }
+
+      &-ghost {
+        background: transparent;
+        border: 1px solid @border-color;
+        color: @accent;
+        &:hover { background: fade(@accent, 10%); }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// ---- Ship Slots Grid ----
+.ship-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+
+  .ship-slot {
+    .card-base();
+    cursor: pointer;
+    transition: transform @transition-normal, border-color @transition-normal;
+    position: relative;
+    min-height: 140px;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: @accent;
+      box-shadow: @shadow-card;
+    }
+
+    &.empty {
+      .flex-center();
+      border-style: dashed;
+      border-color: @border-light;
+      color: @text-muted;
+
+      .empty-text {
+        font-size: 13px;
+        text-align: center;
+      }
+    }
+
+    &.filled {
+      .slot-header {
+        .flex-between();
+        margin-bottom: 10px;
+
+        .ship-name {
+          font-weight: bold;
+          color: #fff;
+          font-size: 14px;
+          .text-ellipsis();
+          max-width: 120px;
+        }
+
+        .ship-tier {
+          font-size: 10px;
+          padding: 2px 8px;
+          border-radius: 10px;
+          font-weight: bold;
+          letter-spacing: 1px;
+
+          &.t1 { background: #92400e; color: @warning; }
+          &.t2 { background: #4a5568; color: @text-muted; }
+          &.t3 { background: #713f12; color: darken(@warning, 10%); }
+        }
+      }
+
+      .slot-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+
+        .slot-stat {
+          font-size: 10px;
+          display: flex;
+          justify-content: space-between;
+
+          .stat-label { color: @text-muted; }
+          .stat-value { font-weight: bold; }
+        }
+      }
+
+      .remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: fade(@danger, 80%);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 11px;
+        cursor: pointer;
+        .flex-center();
+        opacity: 0;
+        transition: opacity @transition-fast;
+
+        &:hover { background: @danger; }
+      }
+
+      &:hover .remove-btn {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// ---- Fleet Sidebar ----
+.fleet-sidebar {
+  .fleet-stats {
+    .card-base();
+    margin-bottom: 16px;
+
+    h3 {
+      color: @accent;
+      font-size: 14px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid @border-light;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-summary-row {
+      .flex-between();
+      padding: 7px 0;
+      border-bottom: 1px solid fade(@border-light, 50%);
+      font-size: 12px;
+
+      &:last-child { border-bottom: none; }
+
+      .summary-label { color: @text-secondary; }
+      .summary-value {
+        font-weight: bold;
+
+        &.high { color: @success; }
+        &.medium { color: @warning; }
+        &.low { color: @danger; }
+      }
+    }
+  }
+
+  .fleet-power-gauge {
+    .card-base();
+    text-align: center;
+
+    h3 {
+      color: @accent;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .power-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: @warning;
+      margin: 8px 0;
+    }
+
+    .power-bar {
+      height: 8px;
+      background: @border-light;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+
+      .power-fill {
+        height: 100%;
+        background: linear-gradient(90deg, @danger, @warning, @success);
+        border-radius: 4px;
+        transition: width @transition-normal;
+      }
+    }
+
+    .power-label {
+      font-size: 10px;
+      color: @text-muted;
+      margin-top: 4px;
+    }
+  }
+}
+
+// ---- Ship Browser Modal ----
+.ship-browser-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: fade(#000, 75%);
+  z-index: 1000;
+  .flex-center();
+
+  &.open { display: flex; }
+
+  .ship-browser {
+    background: @bg-card;
+    border: 2px solid @border-color;
+    border-radius: @border-radius-lg;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 24px;
+
+    .browser-header {
+      .flex-between();
+      margin-bottom: 18px;
+
+      h2 { color: @accent; font-size: 18px; }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: @text-muted;
+        font-size: 20px;
+        cursor: pointer;
+        &:hover { color: @text-primary; }
+      }
+    }
+
+    .browser-search {
+      margin-bottom: 16px;
+
+      input {
+        width: 100%;
+        padding: 10px 14px;
+        background: darken(@bg-card, 5%);
+        border: 1px solid @border-light;
+        border-radius: @border-radius-sm;
+        color: @text-primary;
+        font-size: 13px;
+
+        &:focus {
+          outline: none;
+          border-color: @accent;
+        }
+      }
+    }
+
+    .browser-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+
+      .browser-ship {
+        .card-base();
+        cursor: pointer;
+        text-align: center;
+        transition: all @transition-fast;
+        padding: 12px;
+
+        &:hover {
+          border-color: @accent;
+          background: lighten(@bg-card, 3%);
+        }
+
+        .browser-ship-icon {
+          width: 40px;
+          height: 40px;
+          background: @border-color;
+          border-radius: @border-radius-sm;
+          margin: 0 auto 8px;
+        }
+
+        .browser-ship-name {
+          font-size: 12px;
+          font-weight: bold;
+        }
+
+        .browser-ship-class {
+          font-size: 10px;
+          color: @text-muted;
+        }
+      }
+    }
+  }
+}
+
+// ---- Drag and Drop States ----
+.ship-slot {
+  &.drag-over {
+    border-color: @accent;
+    background: fade(@accent, 8%);
+    box-shadow: 0 0 16px fade(@accent, 30%);
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+}
+
+// ---- Animations ----
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.pulse {
+  animation: pulse-warning 1.5s ease-in-out infinite;
+}
+
+// ---- Responsive ----
+@media (max-width: 768px) {
+  body { padding: 10px; }
+
+  .fleet-container {
+    grid-template-columns: 1fr;
+  }
+
+  .ship-slots {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .fleet-page-header h1 {
+    font-size: 20px;
+  }
+}
+
+// ---- Print ----
+@media print {
+  body { background: #fff; color: #000; }
+  .btn, .ship-browser-overlay { display: none !important; }
+}

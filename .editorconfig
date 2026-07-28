@@ -1,56 +1,152 @@
 # ============================================================
-# EditorConfig — 跨编辑器统一代码风格
-# 支持: VS Code, IntelliJ, Sublime, Vim, Emacs 等
+# Lagrange Tactical AI - EditorConfig
+# Cross-editor configuration for consistent code style
+# Supported by: VS Code, IntelliJ, Sublime, Vim, Emacs, etc.
 # ============================================================
 
 root = true
 
+# ---- Default settings for all files ----
 [*]
 indent_style = space
 indent_size = 4
-end_of_line = crlf
+end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
+max_line_length = 120
 
+# ---- Python ----
 [*.py]
 indent_size = 4
 max_line_length = 100
+ij_python_import_sorting_type = isort
+ij_python_import_layout = 3
 
-[*.js]
+# ---- JavaScript / TypeScript ----
+[*.{js,jsx,ts,tsx,mjs,cjs}]
+indent_size = 2
+max_line_length = 120
+quote_type = single
+ij_javascript_prefer_strict = true
+
+# ---- JSON / JSONC ----
+[*.{json,jsonc,json5}]
 indent_size = 2
 
-[*.ts]
+# ---- YAML ----
+[*.{yaml,yml}]
 indent_size = 2
 
-[*.html]
+# ---- TOML ----
+[*.toml]
 indent_size = 2
 
-[*.css]
+# ---- CSS / SCSS / Less ----
+[*.{css,scss,less}]
 indent_size = 2
 
-[*.json]
+# ---- HTML / Templates ----
+[*.{html,htm,jinja2,j2}]
 indent_size = 2
 
-[*.yaml]
+# ---- Vue / Svelte / Astro ----
+[*.{vue,svelte,astro}]
 indent_size = 2
 
-[*.yml]
-indent_size = 2
+# ---- Markdown / reStructuredText / AsciiDoc ----
+[*.{md,mkd,markdown}]
+trim_trailing_whitespace = false
+max_line_length = off
+ij_markdown_force_one_space_after_blockquote = true
 
-[*.md]
+[*.{rst,adoc}]
 trim_trailing_whitespace = false
 max_line_length = off
 
-[*.bat]
+# ---- Shell scripts ----
+[*.{sh,bash,zsh,fish,ksh}]
+indent_style = tab
+indent_size = 4
+ij_shell_binary_ops_start_line = true
+
+# ---- Makefile ----
+[Makefile]
 indent_style = tab
 indent_size = 4
 
-[Makefile]
+# ---- Batch / PowerShell ----
+[*.{bat,cmd}]
 indent_style = tab
+indent_size = 4
+end_of_line = crlf
 
+[*.{ps1,psm1,psd1}]
+indent_size = 4
+end_of_line = crlf
+
+# ---- SQL ----
 [*.sql]
 indent_size = 2
 
-[*.xml]
+# ---- XML ----
+[*.{xml,svg,xsd,xsl,xslt}]
 indent_size = 2
+
+# ---- C / C++ / C# / Rust / Go / Swift ----
+[*.{c,h,cpp,hpp,cxx,hxx,cc,hh}]
+indent_size = 4
+max_line_length = 100
+ij_cpp_namespace_indent = inner
+
+[*.cs]
+indent_size = 4
+end_of_line = crlf
+
+[*.rs]
+indent_size = 4
+max_line_length = 100
+
+[*.go]
+indent_style = tab
+indent_size = 4
+
+[*.{swift}]
+indent_size = 4
+
+# ---- Java / Kotlin / Scala ----
+[*.{java,kt,kts,scala}]
+indent_size = 4
+
+# ---- .gitignore / .gitattributes ----
+[.gitignore]
+indent_size = 2
+
+[.gitattributes]
+indent_size = 2
+
+# ---- Environment files ----
+[.env*]
+indent_size = 2
+
+# ---- Docker ----
+[Dockerfile*]
+indent_size = 4
+
+[docker-compose*.yml]
+indent_size = 2
+
+# ---- Configuration files ----
+[*.{cfg,conf,config,ini,properties}]
+indent_size = 2
+
+# ---- Lock files ----
+[*.lock]
+indent_style = space
+indent_size = 2
+
+# ---- Log files ----
+[*.log]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false

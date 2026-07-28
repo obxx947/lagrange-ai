@@ -1,0 +1,101 @@
+# ============================================================
+# Lagrange Tactical AI - Development Docker Image
+# Multi-stage build for local development with hot-reload
+# ============================================================
+
+# ---- Stage 1: Base Python environment ----
+FROM python:3.12-slim-bookworm AS base
+
+LABEL org.opencontainers.image.title="Lagrange Tactical AI - Dev"
+LABEL org.opencontainers.image.description="Infinite Lagrange AI Tactical Analysis development image"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.authors="Lagrange AI Community <dev@lagrange-ai.dev>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG USERNAME=lagrange
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_ROOT_USER_ACTION=ignore \
+    TZ=Asia/Shanghai
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    g++ \
+    gcc \
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    libopenblas-dev \
+    libomp-dev \
+    libssl-dev \
+    libffi-dev \
+    tini \
+    tzdata \
+    vim \
+    nano \
+    less \
+    htop \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME} \
+    && mkdir -p /app/data /app/chroma_db /app/db_backup /app/logs /app/lagrange_docs \
+    && chown -R ${USERNAME}:${USERNAME} /app
+
+# ---- Stage 2: Python dependencies ----
+FROM base AS dependencies
+
+WORKDIR /app
+
+COPY requirements.txt requirements-dev.txt ./
+
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install -r requirements.txt \
+    && pip install -r requirements-dev.txt \
+    && pip install \
+        debugpy \
+        ptvsd \
+        watchdog \
+        argh \
+        && rm -rf /root/.cache/pip
+
+# ---- Stage 3: Frontend toolchain (optional) ----
+FROM dependencies AS frontend
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest \
+    && npm install -g \
+        pnpm \
+        yarn \
+        typescript \
+        ts-node \
+        eslint \
+        prettier \
+        webpack \
+        webpack-cli \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Stage 4: Final development image ----
+FROM dependencies AS dev
+
+USER ${USERNAME}
+WORKDIR /app
+
+COPY --chown=${USERNAME}:${USERNAME} . .
+
+EXPOSE 3000 4000 5678 9090
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3000", "--reload", "--reload-dir", "/app", "--log-level", "debug"]

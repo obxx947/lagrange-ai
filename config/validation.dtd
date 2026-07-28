@@ -1,0 +1,112 @@
+<!--
+  ============================================================================
+  Lagrange Tactical AI - Battle Report XML DTD
+  Document Type Definition for validating battle report XML documents.
+  ============================================================================
+-->
+
+<!-- Root element -->
+<!ELEMENT lagrange_battle_report (meta, fleets, battle_result, ai_analysis?)>
+
+<!-- ===== Meta Information ===== -->
+<!ELEMENT meta (generated_at, engine_version, battle_id, seed)>
+<!ELEMENT generated_at (#PCDATA)>
+<!ELEMENT engine_version (#PCDATA)>
+<!ELEMENT battle_id (#PCDATA)>
+<!ELEMENT seed (#PCDATA)>
+
+<!-- ===== Fleet Definitions ===== -->
+<!ELEMENT fleets (fleet+)>
+<!ELEMENT fleet (name, faction?, ships)>
+<!ATTLIST fleet
+    id    ID    #REQUIRED
+    side  (alpha | beta) #REQUIRED
+>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT faction (#PCDATA)>
+
+<!-- ===== Ship Elements ===== -->
+<!ELEMENT ships (ship+)>
+<!ELEMENT ship (ship_class, stats, weapons?, abilities?)>
+<!ATTLIST ship
+    id     ID      #REQUIRED
+    name   CDATA   #REQUIRED
+    tier   (T1 | T2 | T3) #REQUIRED
+    rating CDATA   #IMPLIED
+>
+
+<!ELEMENT ship_class (#PCDATA)>
+
+<!ELEMENT stats (hp, armor, shield, energy_defense?, speed, evasion?,
+                  weapon_dps, accuracy?, crit_rate?, crit_dmg?,
+                  energy, cargo, pop_cost, build_cost?, build_time?)>
+<!ELEMENT hp (#PCDATA)>
+<!ELEMENT armor (#PCDATA)>
+<!ELEMENT shield (#PCDATA)>
+<!ELEMENT energy_defense (#PCDATA)>
+<!ELEMENT speed (#PCDATA)>
+<!ELEMENT evasion (#PCDATA)>
+<!ELEMENT weapon_dps (#PCDATA)>
+<!ELEMENT accuracy (#PCDATA)>
+<!ELEMENT crit_rate (#PCDATA)>
+<!ELEMENT crit_dmg (#PCDATA)>
+<!ELEMENT energy (#PCDATA)>
+<!ELEMENT cargo (#PCDATA)>
+<!ELEMENT pop_cost (#PCDATA)>
+<!ELEMENT build_cost (#PCDATA)>
+<!ELEMENT build_time (#PCDATA)>
+
+<!-- ===== Weapons ===== -->
+<!ELEMENT weapons (weapon+)>
+<!ELEMENT weapon (type, range, slot_count)>
+<!ATTLIST weapon
+    name   CDATA   #REQUIRED
+    damage CDATA   #REQUIRED
+>
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT range (#PCDATA)>
+<!ELEMENT slot_count (#PCDATA)>
+
+<!-- ===== Abilities ===== -->
+<!ELEMENT abilities (ability+)>
+<!ELEMENT ability (description, cooldown?)>
+<!ATTLIST ability
+    name    CDATA   #REQUIRED
+    type    (active | passive) "active"
+>
+<!ELEMENT description (#PCDATA)>
+<!ELEMENT cooldown (#PCDATA)>
+
+<!-- ===== Battle Result ===== -->
+<!ELEMENT battle_result (outcome, winner_fleet, duration, total_rounds,
+                          total_damage, total_ships_lost, hit_rate,
+                          ship_performances?)>
+<!ELEMENT outcome (#PCDATA)>
+<!ELEMENT winner_fleet (#PCDATA)>
+<!ELEMENT duration (#PCDATA)>
+<!ELEMENT total_rounds (#PCDATA)>
+<!ELEMENT total_damage (#PCDATA)>
+<!ELEMENT total_ships_lost (#PCDATA)>
+<!ELEMENT hit_rate (#PCDATA)>
+
+<!-- Ship Performance -->
+<!ELEMENT ship_performances (ship_performance+)>
+<!ELEMENT ship_performance (kills, losses, damage_dealt, damage_taken, survived)>
+<!ATTLIST ship_performance
+    ship_ref IDREF #REQUIRED
+>
+<!ELEMENT kills (#PCDATA)>
+<!ELEMENT losses (#PCDATA)>
+<!ELEMENT damage_dealt (#PCDATA)>
+<!ELEMENT damage_taken (#PCDATA)>
+<!ELEMENT survived (#PCDATA)>
+
+<!-- ===== AI Analysis ===== -->
+<!ELEMENT ai_analysis (summary, recommendations?)>
+<!ELEMENT summary (#PCDATA)>
+<!ELEMENT recommendations (recommendation+)>
+<!ELEMENT recommendation (text)>
+<!ATTLIST recommendation
+    priority (low | medium | high | critical) "medium"
+>
+<!ELEMENT text (#PCDATA)>

@@ -1,0 +1,6 @@
+{
+  "llm_provider": "deepseek",
+  "llm_api_key": "sk-2e39f098ebae4367a1e0dac65ddb0bed",
+  "llm_api_url": "https://api.deepseek.com",
+  "llm_model": "deepseek-v4-pro"
+}

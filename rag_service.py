@@ -58,7 +58,7 @@ def _get_index_dir() -> Path:
 
 
 def _get_index_path() -> Path:
-    return _get_index_dir() / "faiss_index.bin"
+    return _get_index_dir() / "vectors.npy"
 
 
 def _get_metadata_path() -> Path:
@@ -160,20 +160,15 @@ def build_vector_index() -> dict:
     norms[norms == 0] = 1.0
     embeddings_matrix = embeddings_matrix / norms
     
-    # 创建 FAISS 索引
-    import faiss
+    # 保存向量矩阵（numpy格式）
     dim = embeddings_matrix.shape[1]
-    index = faiss.IndexFlatIP(dim)  # Inner Product（归一化后 = 余弦相似度）
-    index.add(embeddings_matrix)
-    
-    # 持久化到磁盘
-    faiss.write_index(index, str(_get_index_path()))
+    np.save(str(_get_index_path()), embeddings_matrix)
     
     metadata = {"chunks": all_chunks, "chunk_count": total_chunks}
     with open(_get_metadata_path(), "wb") as f:
         pickle.dump(metadata, f)
     
-    # 保存 TF-IDF 向量化器（供后续查询使用）
+    # 保存 TF-IDF 向量化器
     with open(_get_vectorizer_path(), "wb") as f:
         pickle.dump(vectorizer, f)
     
@@ -190,7 +185,7 @@ def build_vector_index() -> dict:
 # ==================== 向量检索 ====================
 
 def _load_index():
-    """加载 FAISS 索引、元数据和向量化器"""
+    """加载向量矩阵（numpy格式）、元数据和向量化器"""
     index_path = _get_index_path()
     metadata_path = _get_metadata_path()
     vectorizer_path = _get_vectorizer_path()
@@ -198,8 +193,8 @@ def _load_index():
     if not index_path.exists() or not metadata_path.exists():
         return None, None, None
     
-    import faiss
-    index = faiss.read_index(str(index_path))
+    # 加载numpy向量矩阵替代FAISS
+    embeddings = np.load(str(index_path))
     
     with open(metadata_path, "rb") as f:
         metadata = pickle.load(f)
@@ -211,7 +206,7 @@ def _load_index():
     else:
         vectorizer = _get_vectorizer()
     
-    return index, metadata, vectorizer
+    return embeddings, metadata, vectorizer
 
 
 def search_similar_documents(query: str, top_k: int = None) -> List[dict]:
@@ -229,8 +224,8 @@ def search_similar_documents(query: str, top_k: int = None) -> List[dict]:
         top_k = config.RETRIEVAL_TOP_K
     
     try:
-        index, metadata, vectorizer = _load_index()
-        if index is None or metadata is None:
+        embeddings, metadata, vectorizer = _load_index()
+        if embeddings is None or metadata is None:
             return []
         
         chunks = metadata["chunks"]
@@ -252,16 +247,16 @@ def search_similar_documents(query: str, top_k: int = None) -> List[dict]:
         norms[norms == 0] = 1.0
         query_vec = query_vec / norms
         
-        # 检索
+        # numpy 内积检索（替代FAISS）
+        chunks = metadata["chunks"]
+        scores = np.dot(embeddings, query_vec.T).flatten()  # 余弦相似度
         k = min(top_k, len(chunks))
-        scores, indices = index.search(query_vec, k)
+        top_indices = np.argsort(scores)[-k:][::-1]  # 降序取top-k
         
         # 解析结果
         documents = []
-        for i in range(k):
-            idx = indices[0][i]
-            score = float(scores[0][i])
-            
+        for idx in top_indices:
+            score = float(scores[idx])
             if 0 <= idx < len(chunks):
                 chunk = chunks[idx]
                 documents.append({
@@ -296,5 +291,5 @@ def format_rag_context(documents: List[dict]) -> str:
 
 
 def is_index_built() -> bool:
-    """检查向量索引是否已构建"""
+    """检查向量索引是否已构建（numpy格式）"""
     return _get_index_path().exists() and _get_metadata_path().exists()

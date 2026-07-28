@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Lagrange Agent Server - Restart Orchestrator
+    Windows Script File that coordinates graceful shutdown and restart
+    of the Lagrange tactical analysis service.
+-->
+<job id="LagrangeRestart">
+    <runtime>
+        <description>Lagrange Agent Server Restart Orchestrator</description>
+        <named name="force"  helpstring="Force restart without graceful shutdown" type="boolean" required="false"/>
+        <named name="timeout" helpstring="Shutdown timeout in seconds (default: 30)" type="string" required="false"/>
+    </runtime>
+
+    <!--=========================================================
+        VBScript Section - Service Management
+    ==========================================================-->
+    <script language="VBScript">
+        <![CDATA[
+        Option Explicit
+
+        Dim objShell, objFSO, currentDir, pidFile, serverPID
+        Dim bForce, iTimeoutSeconds
+
+        Set objShell = CreateObject("WScript.Shell")
+        Set objFSO   = CreateObject("Scripting.FileSystemObject")
+        currentDir   = objShell.CurrentDirectory
+        pidFile      = objFSO.BuildPath(currentDir, "logs\server.pid")
+
+        ' Parse arguments
+        bForce          = WScript.Arguments.Named.Exists("force")
+        iTimeoutSeconds = 30
+        If WScript.Arguments.Named.Exists("timeout") Then
+            iTimeoutSeconds = CInt(WScript.Arguments.Named("timeout"))
+        End If
+
+        ' =============================================
+        ' Main restart orchestration
+        ' =============================================
+        Sub Main()
+            LogInfo "============================================"
+            LogInfo " Lagrange Agent Server - Restart Sequence"
+            LogInfo " Time: " & Now()
+            LogInfo " Force: " & bForce
+            LogInfo " Timeout: " & iTimeoutSeconds & " seconds"
+            LogInfo "============================================"
+
+            ReadPID()
+            StopServer()
+            VerifyStopped()
+            PruneLogs()
+            StartServer()
+            VerifyStarted()
+
+            LogInfo "============================================"
+            LogInfo " Restart sequence completed successfully."
+            LogInfo "============================================"
+        End Sub
+
+        ' Read current PID from file
+        Sub ReadPID()
+            If Not objFSO.FileExists(pidFile) Then
+                LogWarn "No PID file found at " & pidFile
+                serverPID = ""
+                Exit Sub
+            End If
+
+            Dim ts : Set ts = objFSO.OpenTextFile(pidFile, 1)
+            serverPID = Trim(ts.ReadLine())
+            ts.Close()
+
+            If serverPID = "" Then
+                LogWarn "PID file is empty."
+            Else
+                LogInfo "Found server PID: " & serverPID
+            End If
+        End Sub
+
+        ' Graceful or forced shutdown
+        Sub StopServer()
+            If serverPID = "" Then
+                LogInfo "No PID to stop. Skipping shutdown."
+                Exit Sub
+            End If
+
+            Dim isRunning : isRunning = IsProcessRunning(serverPID)
+            If Not isRunning Then
+                LogInfo "Server process " & serverPID & " is not currently running."
+                Exit Sub
+            End If
+
+            If bForce Then
+                LogWarn "Force mode: terminating process immediately."
+                objShell.Run "taskkill /PID " & serverPID & " /F", 0, True
+                Exit Sub
+            End If
+
+            ' Graceful shutdown via HTTP API
+            LogInfo "Sending graceful shutdown request..."
+            Dim httpResult : httpResult = objShell.Exec("cmd /c curl -s -X POST http://127.0.0.1:8080/api/shutdown --max-time " & iTimeoutSeconds & " 2>&1").StdOut.ReadAll()
+            LogInfo "Shutdown API response: " & httpResult
+
+            ' Wait for process to exit
+            Dim waited : waited = 0
+            Do While IsProcessRunning(serverPID) And waited < iTimeoutSeconds
+                WScript.Sleep 1000
+                waited = waited + 1
+                If waited Mod 5 = 0 Then
+                    LogInfo "Waiting for shutdown... (" & waited & "s)"
+                End If
+            Loop
+
+            If IsProcessRunning(serverPID) Then
+                LogWarn "Process did not exit gracefully after " & iTimeoutSeconds & "s. Force killing."
+                objShell.Run "taskkill /PID " & serverPID & " /F", 0, True
+            End If
+        End Sub
+
+        ' Verify that PID is no longer running
+        Sub VerifyStopped()
+            If serverPID <> "" Then
+                Dim i : i = 0
+                Do While IsProcessRunning(serverPID) And i < 10
+                    WScript.Sleep 500
+                    i = i + 1
+                Loop
+                If IsProcessRunning(serverPID) Then
+                    LogError "CRITICAL: Unable to stop process " & serverPID
+                Else
+                    LogInfo "Process " & serverPID & " confirmed stopped."
+                End If
+            End If
+
+            ' Also kill any lingering Lagrange processes
+            objShell.Run "taskkill /F /IM python.exe /FI ""WINDOWTITLE eq Lagrange*"" 2>&1", 0, True
+        End Sub
+
+        ' Prune old log entries
+        Sub PruneLogs()
+            LogInfo "Pruning old log entries before restart..."
+            Dim logDir : logDir = objFSO.BuildPath(currentDir, "logs")
+            If objFSO.FolderExists(logDir) Then
+                ' Run the cleanup script
+                Dim cleanupScript : cleanupScript = objFSO.BuildPath(currentDir, "scripts\cleanup.vbs")
+                If objFSO.FileExists(cleanupScript) Then
+                    objShell.Run "cscript //nologo """ & cleanupScript & """", 0, True
+                End If
+            End If
+        End Sub
+
+        ' Start the server
+        Sub StartServer()
+            LogInfo "Starting Lagrange Agent Server..."
+            Dim cmd : cmd = "cmd /c cd /d """ & currentDir & """ && python -m lagrange.server --daemon 2>&1"
+            objShell.Run cmd, 0, False
+            LogInfo "Start command issued."
+        End Sub
+
+        ' Verify server started successfully
+        Sub VerifyStarted()
+            LogInfo "Waiting for server to become ready..."
+            WScript.Sleep 3000
+
+            Dim attempt, maxAttempts : maxAttempts = 10
+            For attempt = 1 To maxAttempts
+                Dim check : check = objShell.Exec("cmd /c curl -s -o NUL -w ""%{http_code}"" http://127.0.0.1:8080/api/health --max-time 3 2>&1").StdOut.ReadAll()
+                If InStr(check, "200") > 0 Then
+                    LogInfo "Server is ready (HTTP 200 on attempt " & attempt & ")"
+                    Exit Sub
+                End If
+                LogInfo "Attempt " & attempt & "/" & maxAttempts & ": Not ready yet (response: " & check & ")"
+                WScript.Sleep 2000
+            Next
+
+            LogError "WARNING: Server may not have started within expected time."
+        End Sub
+
+        ' Check if a process is running by PID
+        Function IsProcessRunning(pid)
+            If pid = "" Or Not IsNumeric(pid) Then
+                IsProcessRunning = False
+                Exit Function
+            End If
+            Dim output : output = objShell.Exec("cmd /c tasklist /FI ""PID eq " & pid & """ 2>&1").StdOut.ReadAll()
+            IsProcessRunning = (InStr(output, CStr(pid)) > 0 And InStr(output, "No tasks") = 0)
+        End Function
+
+        ' =============================================
+        ' Logging helpers
+        ' =============================================
+        Sub LogInfo(msg)
+            WScript.Echo "[INFO]  [" & Time() & "] " & msg
+        End Sub
+
+        Sub LogWarn(msg)
+            WScript.Echo "[WARN]  [" & Time() & "] " & msg
+        End Sub
+
+        Sub LogError(msg)
+            WScript.Echo "[ERROR] [" & Time() & "] " & msg
+        End Sub
+
+        Main()
+        ]]>
+    </script>
+
+    <!--=========================================================
+        JScript Section - Diagnostic Utilities
+    ==========================================================-->
+    <script language="JScript">
+        <![CDATA[
+        // Diagnostic and reporting utilities for the restart process
+
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var shell = new ActiveXObject("WScript.Shell");
+        var currentDir = shell.CurrentDirectory;
+
+        /**
+         * Get system memory information via WMIC
+         * @returns {Object} memory stats
+         */
+        function getMemoryInfo() {
+            try {
+                var exec = shell.Exec("cmd /c wmic OS get TotalVisibleMemorySize,FreePhysicalMemory /format:csv 2>&1");
+                var output = exec.StdOut.ReadAll();
+                WScript.Echo("[DIAG] Memory Info: " + output.replace(/\r?\n/g, " | "));
+                return output;
+            } catch (e) {
+                WScript.Echo("[DIAG] Could not retrieve memory info: " + e.message);
+                return null;
+            }
+        }
+
+        /**
+         * Check if the required Python packages are installed
+         */
+        function verifyPythonEnvironment() {
+            try {
+                WScript.Echo("[DIAG] Verifying Python environment...");
+                var exec = shell.Exec("cmd /c python --version 2>&1");
+                var pyVer = exec.StdOut.ReadAll();
+                if (pyVer.indexOf("Python") >= 0) {
+                    WScript.Echo("[DIAG] Python available: " + pyVer);
+                } else {
+                    WScript.Echo("[DIAG] WARNING: Python not found!");
+                    return false;
+                }
+
+                // Check lagrange package
+                var exec2 = shell.Exec("cmd /c python -c \"import lagrange; print(lagrange.__version__)\" 2>&1");
+                var lagVer = exec2.StdOut.ReadAll();
+                WScript.Echo("[DIAG] Lagrange package version: " + lagVer);
+                return true;
+            } catch (e) {
+                WScript.Echo("[DIAG] Python check error: " + e.message);
+                return false;
+            }
+        }
+
+        /**
+         * Create a restart marker file for external monitoring
+         * @param {boolean} success - Whether restart was successful
+         */
+        function writeRestartMarker(success) {
+            var markerPath = fso.BuildPath(currentDir, "logs\\restart_marker.txt");
+            try {
+                var ts = fso.OpenTextFile(markerPath, 2, true);
+                ts.WriteLine("Restart performed at: " + new Date().toString());
+                ts.WriteLine("Success: " + (success ? "YES" : "NO"));
+                ts.Close();
+                WScript.Echo("[DIAG] Restart marker written to: " + markerPath);
+            } catch (e) {
+                WScript.Echo("[DIAG] Could not write restart marker: " + e.message);
+            }
+        }
+
+        /**
+         * Count recent log entries to verify logging is functioning post-restart
+         */
+        function checkLogActivity() {
+            try {
+                var logDir = fso.BuildPath(currentDir, "logs");
+                if (!fso.FolderExists(logDir)) return;
+
+                var folder = fso.GetFolder(logDir);
+                var recentCount = 0;
+                var cutoffDate = new Date();
+                cutoffDate.setMinutes(cutoffDate.getMinutes() - 5);
+
+                var e = new Enumerator(folder.Files);
+                for (; !e.atEnd(); e.moveNext()) {
+                    var file = e.item();
+                    if (file.DateLastModified > cutoffDate) {
+                        recentCount++;
+                    }
+                }
+                WScript.Echo("[DIAG] Recently modified log files (last 5 min): " + recentCount);
+            } catch (e) {
+                WScript.Echo("[DIAG] Log activity check failed: " + e.message);
+            }
+        }
+
+        // Execute diagnostics after VBScript main routine
+        function runDiagnostics() {
+            WScript.Echo("");
+            WScript.Echo("[DIAG] === Running JScript Diagnostics ===");
+            getMemoryInfo();
+            verifyPythonEnvironment();
+            checkLogActivity();
+        }
+
+        // Run diagnostics after a short delay to allow server startup
+        WScript.Sleep(5000);
+        runDiagnostics();
+        ]]>
+    </script>
+</job>

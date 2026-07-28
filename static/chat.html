@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI战术顾问 — 拉格朗日智能体</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#0a0e1a;--bg2:#111827;--bg3:#1a2332;--border:#2d4a6f;
+            --blue:#4a9eff;--cyan:#00d4ff;--gold:#ffd700;--green:#2ed573;--red:#ff4757;
+            --t1:#e8f4ff;--t2:#8ba3c7;--t3:#5a7a9a;
+        }
+        body{font-family:'Inter','Microsoft YaHei','PingFang SC',sans-serif;background:var(--bg);color:var(--t1);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+        .topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+        .topbar .logo{font-size:0.95rem;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+        .topbar .status{font-size:0.65rem;color:var(--t3);display:flex;align-items:center;gap:4px}
+        .topbar .status .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+        .topbar .status .dot.busy{background:var(--gold);animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+        .topbar .links{display:flex;gap:6px;align-items:center}
+        .topbar .links a{color:var(--t2);text-decoration:none;font-size:0.7rem;padding:5px 10px;border-radius:6px;transition:all 0.2s;white-space:nowrap}
+        .topbar .links a:hover{color:#fff;background:rgba(255,255,255,0.05)}
+
+        .main{flex:1;display:flex;overflow:hidden;min-height:0}
+        .sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+        .sidebar-header{padding:10px;border-bottom:1px solid var(--border);font-size:0.7rem;color:var(--t3);display:flex;justify-content:space-between;align-items:center}
+        .sidebar-header button{background:none;border:1px solid var(--border);color:var(--t2);padding:3px 7px;border-radius:4px;cursor:pointer;font-size:0.6rem}
+        .sidebar-header button:hover{border-color:var(--red);color:var(--red)}
+        .conv-list{flex:1;overflow-y:auto;padding:4px}
+        .conv-item{padding:8px 10px;border-radius:6px;cursor:pointer;margin-bottom:2px;transition:all 0.15s;font-size:0.7rem;color:var(--t2);border:1px solid transparent}
+        .conv-item:hover{background:rgba(255,255,255,0.03);border-color:var(--border)}
+        .conv-item.active{background:rgba(74,158,255,0.08);border-color:rgba(74,158,255,0.25);color:var(--t1)}
+        .conv-item .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;margin-bottom:1px}
+        .conv-item .m{font-size:0.6rem;color:var(--t3)}
+
+        .chat-area{flex:1;display:flex;flex-direction:column;min-width:0}
+        .chat-msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+        .msg{max-width:78%;padding:10px 14px;border-radius:12px;font-size:0.8rem;line-height:1.6;word-break:break-word;animation:fadeIn 0.25s}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2d6ad4);color:#fff;border-bottom-right-radius:3px}
+        .msg.assistant{align-self:flex-start;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-bottom-left-radius:3px}
+        .msg .src{font-size:0.6rem;color:var(--cyan);margin-top:6px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.06)}
+        .msg pre{background:rgba(0,0,0,0.3);padding:7px;border-radius:5px;font-size:0.65rem;overflow-x:auto;margin:4px 0;white-space:pre-wrap}
+
+        /* Status lines - like ZCode */
+        .status-msg{display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:0.7rem;color:var(--t3);animation:fadeIn 0.2s}
+        .status-msg.working{color:var(--gold)}
+        .status-msg.done{color:var(--green)}
+        .status-msg.error{color:var(--red)}
+        .status-msg .icon{font-size:0.85rem}
+
+        .input-area{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--bg2)}
+        .input-area textarea{flex:1;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;color:var(--t1);padding:10px 12px;font-size:0.8rem;resize:none;outline:none;max-height:120px;font-family:inherit;line-height:1.4}
+        .input-area textarea:focus{border-color:var(--blue)}
+        .input-area .send{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;color:#000;font-size:1rem;cursor:pointer;flex-shrink:0;transition:all 0.2s}
+        .input-area .send:hover{box-shadow:0 0 15px rgba(74,158,255,0.4)}
+        .input-area .send:disabled{opacity:0.25;cursor:not-allowed}
+
+        .ctx-bar{margin:0 16px;height:2px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden}
+        .ctx-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));transition:width 0.5s;border-radius:1px}
+        .ctx-text{font-size:0.58rem;color:var(--t3);text-align:center;padding:2px 0 6px}
+
+        .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);gap:6px}
+        .empty .icon{font-size:2.5rem;opacity:0.25}
+        .empty .hint{font-size:0.75rem;max-width:380px;text-align:center;line-height:1.6}
+
+        @media(max-width:700px){
+            .sidebar{display:none}
+            .msg{max-width:90%}
+            .topbar .links a{font-size:0.6rem;padding:3px 6px}
+            .topbar .status{display:none}
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="logo">🤖 拉格朗日 AI 战术顾问</div>
+        <div class="status" id="topStatus"><span class="dot"></span> 就绪</div>
+        <div class="links">
+            <a href="/">⚓ 模拟器</a>
+            <a href="/settings.html">⚙️ 设置</a>
+            <a href="/intro" target="_blank">📖 介绍</a>
+            <a href="#" onclick="newChat();return false">＋ 新对话</a>
+        </div>
+    </div>
+
+    <div class="ctx-bar"><div class="ctx-fill" id="ctxFill" style="width:0%"></div></div>
+    <div class="ctx-text" id="ctxText">上下文: 0 / 100,000 tokens (0%)</div>
+
+    <div class="main">
+        <div class="sidebar">
+            <div class="sidebar-header"><span>💬 历史</span><button onclick="clearAllChats()">清空</button></div>
+            <div class="conv-list" id="convList"></div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-msgs" id="chatMsgs">
+                <div class="empty" id="emptyState">
+                    <div class="icon">🤖</div>
+                    <div class="hint">我是拉格朗日AI战术顾问。<br>舰队配置、战斗分析、舰船对比 — 舰队配置问题会自动调用战斗模拟器推演验证。</div>
+                </div>
+            </div>
+            <div class="input-area">
+                <textarea id="chatInput" rows="1" placeholder="输入战术问题... (Enter发送, Shift+Enter换行)" onkeydown="handleKey(event)"></textarea>
+                <button class="send" id="sendBtn" onclick="send()">➤</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ======== State ========
+let activeConv = null;
+let conversations = {};
+let isStreaming = false;
+let tokenUsed = 0;
+const MAX_TOKENS = 100000;
+
+// ======== Init ========
+function init(){
+    try{ const s=localStorage.getItem('lagrange_conversations'); if(s) conversations=JSON.parse(s); }catch(e){}
+    if(!Object.keys(conversations).length) newChat();
+    else switchConv(Object.keys(conversations).pop());
+    updateTokenBar();
+}
+
+function newChat(){
+    const id='conv_'+Date.now();
+    conversations[id]={title:'新对话',messages:[],createdAt:new Date().toISOString()};
+    save(); switchConv(id);
+}
+
+function switchConv(id){
+    activeConv=id;
+    const conv=conversations[id];
+    const el=document.getElementById('chatMsgs');
+    el.innerHTML='';
+    if(!conv.messages.length){
+        el.innerHTML='<div class="empty"><div class="icon">🤖</div><div class="hint">开始新对话</div></div>';
+    } else {
+        conv.messages.forEach(m=>renderMsg(m.role,m.content,m.meta));
+    }
+    el.scrollTop=el.scrollHeight;
+    renderConvList();
+    // Recalc tokens for this conversation
+    tokenUsed=0;
+    conv.messages.forEach(m=>{ tokenUsed+= (m.content||'').length; });
+    updateTokenBar();
+}
+
+function renderConvList(){
+    const ids=Object.keys(conversations).reverse();
+    document.getElementById('convList').innerHTML=ids.map(id=>{
+        const c=conversations[id];
+        return `<div class="conv-item${id===activeConv?' active':''}" onclick="switchConv('${id}')">
+            <div class="t">${c.title||'新对话'}</div>
+            <div class="m">${new Date(c.createdAt).toLocaleDateString('zh-CN')} · ${c.messages.length}条</div>
+        </div>`;
+    }).join('');
+}
+
+function save(){ localStorage.setItem('lagrange_conversations',JSON.stringify(conversations)); }
+function clearAllChats(){
+    if(!confirm('清空全部历史？')) return;
+    conversations={}; activeConv=null; tokenUsed=0;
+    localStorage.removeItem('lagrange_conversations');
+    document.getElementById('chatMsgs').innerHTML='<div class="empty"><div class="icon">🤖</div><div class="hint">历史已清空，开始新对话</div></div>';
+    document.getElementById('convList').innerHTML='';
+    updateTokenBar();
+}
+
+// ======== Keyboard ========
+function handleKey(e){
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+}
+
+// ======== Send ========
+async function send(){
+    if(isStreaming) return;
+    const input=document.getElementById('chatInput');
+    const msg=input.value.trim();
+    if(!msg) return;
+    input.value=''; input.style.height='auto';
+
+    if(!activeConv || !conversations[activeConv]) newChat();
+    const conv=conversations[activeConv];
+    if(!conv.messages.length) conv.title=msg.substring(0,30)+(msg.length>30?'...':'');
+
+    // Render user msg
+    renderMsg('user',msg);
+    conv.messages.push({role:'user',content:msg});
+    tokenUsed += msg.length;
+    updateTokenBar();
+    save();
+    renderConvList();
+
+    isStreaming=true;
+    document.getElementById('sendBtn').disabled=true;
+    setStatus('busy','思考中...');
+
+    // Assistant placeholder
+    const assistDiv=renderMsg('assistant','',null,true);
+    let fullAnswer='';
+    let sources=[];
+
+    try{
+        const resp=await fetch('/api/agent/chat',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                message:msg,
+                history:conv.messages.slice(-30),
+                simulator_state:null
+            })
+        });
+
+        if(!resp.ok){
+            assistDiv.remove();
+            renderMsg('error',`HTTP ${resp.status}: ${resp.status===400?'请先在设置页配置API Key':'服务异常'}`);
+            finish(); return;
+        }
+
+        const reader=resp.body.getReader();
+        const decoder=new TextDecoder();
+        let buffer='';
+
+        while(true){
+            const{ done,value}=await reader.read();
+            if(done) break;
+            buffer+=decoder.decode(value,{stream:true});
+            const lines=buffer.split('\n');
+            buffer=lines.pop()||'';
+            for(const line of lines){
+                if(!line.startsWith('data: ')) continue;
+                try{
+                    const evt=JSON.parse(line.slice(6));
+                    const{event:e,data:d,meta}=evt;
+
+                    if(e==='status' && d.includes('检索')){
+                        setStatus('busy','🔍 '+d);
+                        addStatusLine('🔍',d);
+                    } else if(e==='status' && d.includes('质检')){
+                        setStatus('busy','🔬 '+d);
+                        addStatusLine('🔬',d);
+                    } else if(e==='tool_start'){
+                        setStatus('busy','🔧 调用: '+meta.tool);
+                        addStatusLine('🔧','调用工具: '+meta.tool);
+                    } else if(e==='tool_result'){
+                        addStatusLine('📋','工具结果已返回');
+                    } else if(e==='qc_pass'){
+                        addStatusLine('✅','质检通过');
+                    } else if(e==='qc_fail'){
+                        addStatusLine('⚠️','质检: '+d.substring(0,100));
+                    } else if(e==='answer'){
+                        fullAnswer=d;
+                        if(meta) sources=meta.sources||[];
+                        assistDiv.innerHTML=formatContent(d,sources);
+                    } else if(e==='error'){
+                        addStatusLine('❌',d);
+                        assistDiv.remove();
+                    } else if(e==='done'){
+                        // complete
+                    }
+                }catch(ex){}
+            }
+            document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+        }
+
+        if(fullAnswer){
+            conv.messages.push({role:'assistant',content:fullAnswer,meta:{sources}});
+            tokenUsed += fullAnswer.length;
+        }else if(!document.getElementById('chatMsgs').contains(assistDiv)){
+            // msg was removed by error
+        }else{
+            assistDiv.innerHTML='<span style="color:var(--t3)">（未收到回复）</span>';
+        }
+        save();
+        updateTokenBar();
+        renderConvList();
+
+    }catch(e){
+        if(document.getElementById('chatMsgs').contains(assistDiv)) assistDiv.remove();
+        renderMsg('error','网络错误: '+e.message);
+    }
+    finish();
+}
+
+function finish(){
+    isStreaming=false;
+    document.getElementById('sendBtn').disabled=false;
+    setStatus('idle','就绪');
+    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+    document.getElementById('chatInput').focus();
+}
+
+function setStatus(state,text){
+    const dot=document.querySelector('#topStatus .dot');
+    dot.className='dot'+(state==='busy'?' busy':'');
+    document.getElementById('topStatus').innerHTML=`<span class="dot${state==='busy'?' busy':''}"></span> ${text}`;
+}
+
+function addStatusLine(icon,text){
+    const div=document.createElement('div');
+    div.className='status-msg working';
+    div.innerHTML=`<span class="icon">${icon}</span> ${text}`;
+    document.getElementById('chatMsgs').appendChild(div);
+    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+    // Auto-remove after 8s
+    setTimeout(()=>{ if(div.parentNode) div.remove(); }, 8000);
+}
+
+function formatContent(text,sources){
+    let html=text.replace(/\n/g,'<br>');
+    if(sources&&sources.length){
+        html+='<div class="src">📎 '+sources.map(s=>s.file_name||s.source||'?').filter((v,i,a)=>a.indexOf(v)===i).join(' · ')+'</div>';
+    }
+    return html;
+}
+
+function renderMsg(role,text,meta,typing){
+    const div=document.createElement('div');
+    div.className='msg '+role;
+    if(typing){
+        div.innerHTML='<span style="display:flex;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue);animation:blink 1.4s infinite"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--blue);animation:blink 1.4s infinite .2s"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--blue);animation:blink 1.4s infinite .4s"></span></span>';
+    }else if(role==='assistant'){
+        div.innerHTML=formatContent(text,meta?.sources||[]);
+    }else if(role==='error'){
+        div.textContent='❌ '+text;
+    }else{
+        div.textContent=text;
+    }
+    document.getElementById('chatMsgs').appendChild(div);
+    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+    return div;
+}
+
+function updateTokenBar(){
+    const pct=Math.min(100,(tokenUsed/MAX_TOKENS)*100);
+    document.getElementById('ctxFill').style.width=pct+'%';
+    document.getElementById('ctxText').textContent=`上下文: ${tokenUsed.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens (${Math.round(pct)}%)`;
+}
+
+// Auto-resize
+document.addEventListener('DOMContentLoaded',()=>{
+    init();
+    const ta=document.getElementById('chatInput');
+    ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(120,ta.scrollHeight)+'px'; });
+});
+
+// CSS animation
+const style=document.createElement('style');
+style.textContent='@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>

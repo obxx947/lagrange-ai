@@ -1,0 +1,378 @@
+doctype html
+html(lang="zh-CN")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Lagrange - Ship Comparison Table
+    style.
+      :root {
+        --bg: #0b1121;
+        --card: #111827;
+        --border: #1e3a8a;
+        --text: #e0e8ff;
+        --accent: #60a5fa;
+        --better: #22c55e;
+        --worse: #ef4444;
+        --equal: #f59e0b;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: var(--bg);
+        font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        color: var(--text);
+        padding: 20px;
+      }
+      .page-header {
+        text-align: center;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-bottom: 2px solid var(--border);
+      }
+      .page-header h1 {
+        color: var(--accent);
+        font-size: 24px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .page-header .subtitle {
+        color: #93c5fd;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 15px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .controls label {
+        font-size: 12px;
+        color: #93c5fd;
+        margin-right: 5px;
+      }
+      .controls select, .controls input {
+        background: #0f172a;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      .controls select:focus, .controls input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .btn-compare {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 13px;
+      }
+      .btn-compare:hover { opacity: 0.85; }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .comparison-table thead th {
+        background: #1e293b;
+        color: var(--accent);
+        padding: 14px 12px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: left;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .comparison-table thead th.sortable {
+        cursor: pointer;
+        user-select: none;
+      }
+      .comparison-table thead th.sortable:hover {
+        background: #334155;
+      }
+      .comparison-table tbody td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e293b;
+        font-size: 13px;
+      }
+      .comparison-table tbody tr:hover td {
+        background: #1e293b55;
+      }
+
+      .cell-highlight { font-weight: bold; }
+      .cell-highlight.best  { color: var(--better); }
+      .cell-highlight.worst { color: var(--worse); }
+      .cell-highlight.avg  { color: var(--equal); }
+
+      .ship-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ship-thumb {
+        width: 28px; height: 28px;
+        background: var(--border);
+        border-radius: 4px;
+      }
+      .ship-name-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: bold;
+      }
+      .ship-name-link:hover { text-decoration: underline; }
+
+      .tier-badge {
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: bold;
+        letter-spacing: 1px;
+      }
+      .tier-badge.t1 { background: #92400e; color: #fbbf24; }
+      .tier-badge.t2 { background: #4a5568; color: #cbd5e0; }
+      .tier-badge.t3 { background: #713f12; color: #d97706; }
+
+      .diff-indicator {
+        font-size: 10px;
+        margin-left: 4px;
+      }
+      .diff-indicator.up { color: var(--better); }
+      .diff-indicator.down { color: var(--worse); }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px;
+        color: #64748b;
+      }
+      .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+    body
+      .page-header
+        h1 Ship Comparison Table
+        .subtitle Select ships to compare stats side-by-side
+
+      .controls
+        label(for="shipSelectA") Ship A:
+        select#shipSelectA
+          option(value="") -- Select Ship --
+          each ship in shipList
+            option(value=ship.id)= ship.name
+
+        label(for="shipSelectB") Ship B:
+        select#shipSelectB
+          option(value="") -- Select Ship --
+          each ship in shipList
+            option(value=ship.id)= ship.name
+
+        label(for="shipSelectC") Ship C:
+        select#shipSelectC
+          option(value="") -- Optional --
+          each ship in shipList
+            option(value=ship.id)= ship.name
+
+        button.btn-compare(onclick="compareShips()") Compare Ships
+
+      if selectedShips && selectedShips.length > 0
+        table.comparison-table
+          thead
+            tr
+              th Attribute
+              each s in selectedShips
+                th.sortable
+                  .ship-name-cell
+                    .ship-thumb
+                    span= s.name
+                    span.tier-badge(class="t" + s.tier)= "T" + s.tier
+          tbody
+            //- Basic Info
+            tr
+              td(colspan=selectedShips.length + 1)
+                strong(style="color: var(--accent);") Basic Information
+
+            tr
+              td Ship Class
+              each s in selectedShips
+                td= s.ship_class
+
+            tr
+              td Tier
+              each s in selectedShips
+                td
+                  span.tier-badge(class="t" + s.tier)= "T" + s.tier
+
+            tr
+              td Rating
+              each s in selectedShips
+                td
+                  - for (let i = 0; i < 5; i++)
+                    span(style=(i < s.rating ? "color: var(--equal);" : "color: #374151;")) &#9733;
+
+            //- Defensive Stats
+            tr
+              td(colspan=selectedShips.length + 1)
+                strong(style="color: var(--accent);") Defensive Stats
+
+            tr
+              td Hull Points (HP)
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('hp', s, selectedShips))= s.hp.toLocaleString()
+
+            tr
+              td Armor
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('armor', s, selectedShips))= s.armor.toLocaleString()
+
+            tr
+              td Shield Capacity
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('shield', s, selectedShips))= s.shield.toLocaleString()
+
+            tr
+              td Energy Defense
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('energy_defense', s, selectedShips))= s.energy_defense.toLocaleString()
+
+            //- Offensive Stats
+            tr
+              td(colspan=selectedShips.length + 1)
+                strong(style="color: var(--accent);") Offensive Stats
+
+            tr
+              td Weapon DPS
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('weapon_dps', s, selectedShips))= s.weapon_dps.toLocaleString()
+
+            tr
+              td Weapon Range (m)
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('weapon_range', s, selectedShips))= s.weapon_range.toLocaleString()
+
+            tr
+              td Accuracy
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('accuracy', s, selectedShips))= s.accuracy + '%'
+
+            tr
+              td Crit Rate
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('crit_rate', s, selectedShips))= s.crit_rate + '%'
+
+            tr
+              td Crit Damage Multiplier
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('crit_dmg', s, selectedShips))= s.crit_dmg + 'x'
+
+            //- Mobility
+            tr
+              td(colspan=selectedShips.length + 1)
+                strong(style="color: var(--accent);") Mobility
+
+            tr
+              td Speed
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('speed', s, selectedShips))= s.speed.toLocaleString()
+
+            tr
+              td Evasion Rate
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('evasion', s, selectedShips))= s.evasion + '%'
+
+            //- Utility
+            tr
+              td(colspan=selectedShips.length + 1)
+                strong(style="color: var(--accent);") Utility
+
+            tr
+              td Cargo Capacity
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('cargo', s, selectedShips))= s.cargo.toLocaleString()
+
+            tr
+              td Build Cost
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('build_cost', s, selectedShips))= s.build_cost.toLocaleString()
+
+            tr
+              td Build Time (s)
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('build_time', s, selectedShips))= s.build_time + 's'
+
+            tr
+              td Population Cost
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('pop_cost', s, selectedShips))= s.pop_cost
+
+      else
+        .empty-state
+          .icon &#128269;
+          h3 Select ships above to compare
+          p Compare hull points, armor, shields, weapons, and more side-by-side.
+
+      if selectedShips && selectedShips.length >= 2
+        .page-header(style="margin-top: 30px;")
+          h2 AI Analysis
+          .subtitle Automated tactical comparison
+
+        table.comparison-table
+          thead
+            tr
+              th Category
+              each s in selectedShips
+                th= s.name
+          tbody
+            tr
+              td Overall Combat Score
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('combat_score', s, selectedShips))
+                  = s.combat_score.toLocaleString()
+                  if s.combat_score > (selectedShips[0].combat_score + selectedShips[selectedShips.length-1].combat_score) / 2
+                    span.diff-indicator.up &#9650; Above Avg
+                  else
+                    span.diff-indicator.down &#9660; Below Avg
+
+            tr
+              td Durability Rating
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('durability', s, selectedShips))= s.durability_rating.toLocaleString()
+
+            tr
+              td Firepower Rating
+              each s in selectedShips
+                td.cell-highlight(class=getHighlightClass('firepower', s, selectedShips))= s.firepower_rating.toLocaleString()
+
+      script.
+        function compareShips() {
+          const a = document.getElementById('shipSelectA').value;
+          const b = document.getElementById('shipSelectB').value;
+          const c = document.getElementById('shipSelectC').value;
+          const ids = [a, b, c].filter(id => id).join(',');
+          if (ids) {
+            window.location.href = '/compare?ids=' + ids;
+          }
+        }
+
+        function getHighlightClass(attr, ship, allShips) {
+          const values = allShips.map(s => s[attr]).filter(v => v !== undefined);
+          if (values.length < 2) return '';
+          const max = Math.max(...values);
+          const min = Math.min(...values);
+          if (ship[attr] === max && max !== min) return 'best';
+          if (ship[attr] === min && max !== min) return 'worst';
+          return 'avg';
+        }

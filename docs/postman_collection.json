@@ -1,0 +1,334 @@
+{
+  "info": {
+    "name": "Lagrange Tactical AI - Postman Collection",
+    "description": "Complete API collection for the Infinite Lagrange AI Tactical Analysis Center. Includes all endpoints for authentication, ship database querying, battle simulation, fleet optimization, and AI chat.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "lagrange-ai-team"
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"fleet_commander\",\n  \"password\": \"securePassword123\",\n  \"email\": \"commander@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"fleet_commander\",\n  \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.access_token) {",
+                  "  pm.environment.set('jwt_token', response.access_token);",
+                  "  console.log('JWT token saved to environment');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ships",
+      "item": [
+        {
+          "name": "List All Ships",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/ships?class=destroyer&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ships"],
+              "query": [
+                { "key": "class", "value": "destroyer", "disabled": true },
+                { "key": "faction", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ship Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/ships/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ships", "1"]
+            }
+          }
+        },
+        {
+          "name": "Search Ships by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/ships?search={{shipName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ships"],
+              "query": [{ "key": "search", "value": "{{shipName}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Chat",
+      "item": [
+        {
+          "name": "Tactical Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What is the best fleet composition to counter a carrier-heavy enemy fleet?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Chat with Fleet Context",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Analyze my fleet composition\",\n  \"context\": {\n    \"fleet_ids\": [1, 2, 3]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fleet Management",
+      "item": [
+        {
+          "name": "Save Fleet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Anti-Carrier Fleet\",\n  \"ships\": [\n    { \"ship_id\": 15, \"count\": 10 },\n    { \"ship_id\": 42, \"count\": 5 },\n    { \"ship_id\": 88, \"count\": 3 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/simulator/save",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulator", "save"]
+            }
+          }
+        },
+        {
+          "name": "Get Saved Fleets",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/simulator/saves",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulator", "saves"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Battle Simulation",
+      "item": [
+        {
+          "name": "Analyze Fleet Battle",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attacker_fleet_id\": 1,\n  \"defender_fleet_id\": 2,\n  \"battle_rounds\": 120\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/simulator/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulator", "analyze"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Recharge Tokens",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"amount\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/recharge",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "recharge"]
+            }
+          }
+        },
+        {
+          "name": "Backup Database",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/backup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "backup"]
+            }
+          }
+        },
+        {
+          "name": "Rebuild RAG Index",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/rebuild-index",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rebuild-index"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string",
+      "description": "Lagrange API base URL"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token from login"
+    },
+    {
+      "key": "shipName",
+      "value": "Spear of Uranus",
+      "type": "string",
+      "description": "Ship name for search"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "value", "value": "{{jwt_token}}" }]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Pre-request: Check JWT token availability",
+          "const token = pm.environment.get('jwt_token');",
+          "if (!token && pm.request.url.path.includes('api/chat')) {",
+          "  console.warn('No JWT token set. Please login first.');",
+          "}"
+        ]
+      }
+    }
+  ]
+}

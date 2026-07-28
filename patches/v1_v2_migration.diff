@@ -1,0 +1,177 @@
+diff --git a/lagrange/models/ship.py b/lagrange/models/ship.py
+index a1b2c3d..e4f5g6h 100644
+--- a/lagrange/models/ship.py
++++ b/lagrange/models/ship.py
+@@ -12,6 +12,12 @@ class Ship(BaseModel):
+     name: str
+     ship_class: str
+     tier: int
++    rating: int = 3               # NEW: 1-5 star rating
++    faction: str = "unknown"      # NEW: faction affiliation
++    combat_score: int = 0         # NEW: computed overall combat score
++    durability_rating: int = 0    # NEW: computed durability
++    firepower_rating: int = 0     # NEW: computed firepower
++    tags: list[str] = []          # NEW: searchable tags
+
+     # Defensive stats
+     hp: int
+@@ -19,11 +25,14 @@ class Ship(BaseModel):
+     shield: int
+     energy_defense: int = 0
+
++    # Mobility (expanded in v2)
++    speed: int
++    evasion: float = 0.0
++    warp_speed: int = 0
++    turn_rate: int = 0
++
+     # Offensive stats (v1 format)
+-    anti_ship_dpm: int
+-    anti_air_dpm: int
+-    siege_dpm: int
+-    survival_score: int
+-    strategy_score: int
++    weapon_dps: int               # RENAMED: was anti_ship_dpm
++    accuracy: float = 0.0
++    crit_rate: float = 0.0
++    crit_dmg: float = 1.0
++    weapon_range: int = 0
+
+     # Utility
+     energy: int
+     cargo: int
+     pop_cost: int
++    build_cost: int = 0           # NEW
++    build_time: int = 0           # NEW
+
+-    # Legacy modules (v1 format)
+-    modules: dict[str, Module] = {}
++    # Weapons (v2 structured format)
++    weapons: list[Weapon] = []
++    abilities: list[Ability] = []  # NEW: special abilities
+diff --git a/lagrange/models/battle.py b/lagrange/models/battle.py
+index b2c3d4e..f5g6h7i 100644
+--- a/lagrange/models/battle.py
++++ b/lagrange/models/battle.py
+@@ -5,7 +5,12 @@ from .ship import Ship
+
+ class BattleResult(BaseModel):
+     battle_id: str
+-    winner: str
++    winner_fleet: str              # RENAMED: was "winner"
++    outcome: str                   # NEW: victory | defeat | draw
+     duration_seconds: float
+     total_rounds: int
++    total_damage: int              # NEW
++    total_ships_lost: int          # NEW
++    hit_rate: float                # NEW
+     fleets: list[FleetState]
++    ship_performance: list[ShipPerformance]  # NEW
++    ai_analysis: dict | None = None           # NEW: tactical analysis
+diff --git a/lagrange/server/api.py b/lagrange/server/api.py
+index c3d4e5f..g6h7i8j 100644
+--- a/lagrange/server/api.py
++++ b/lagrange/server/api.py
+@@ -8,6 +8,8 @@ app = Flask(__name__)
+ CORS(app)
+
+ # ---- V2 New Endpoints ----
++@app.route("/api/v2/ships", methods=["GET"])
++def get_ships_v2():
++    """Return ships with new v2 fields including weapons, abilities, tags."""
++    ...
++
+ @app.route("/api/v2/compare", methods=["GET"])
+ def compare_ships_v2():
+     """Compare multiple ships side-by-side using v2 stats."""
+@@ -18,6 +20,8 @@ def simulate_battle_v2():
+     """Run battle simulation with v2 combat model."""
+     ...
+
+-# ---- V1 Legacy Endpoints (deprecated) ----
++# ---- V1 Legacy Endpoints (deprecated, remove after 2026-12) ----
+ @app.route("/api/v1/ships", methods=["GET"])
+ def get_ships_v1():
+     """DEPRECATED: Use /api/v2/ships instead."""
+diff --git a/lagrange/ai/engine.py b/lagrange/ai/engine.py
+index d4e5f6g..h7i8j9k 100644
+--- a/lagrange/ai/engine.py
++++ b/lagrange/ai/engine.py
+@@ -1,5 +1,7 @@
+ """Lagrange AI Combat Engine."""
++from dataclasses import dataclass
+
++
+-class CombatSimulator:
++@dataclass
++class SimulationConfig:
++    max_rounds: int = 600
++    tick_rate: int = 20
++    seed: int = 42
++
++
++class CombatSimulator:
+-    def simulate(self, fleet_a, fleet_b):
++    def __init__(self, config: SimulationConfig | None = None):
++        self.config = config or SimulationConfig()
++
++    def simulate(self, fleet_a: list, fleet_b: list) -> BattleResult:
+         """Run combat simulation and return detailed results."""
+-        # V1: simple DPM comparison
+-        a_power = sum(s.anti_ship_dpm for s in fleet_a)
+-        b_power = sum(s.anti_ship_dpm for s in fleet_b)
+-        winner = "ally" if a_power > b_power else "enemy"
++        # V2: full simulation with abilities, evasion, positioning
++        ...
++
++    def analyze(self, result: BattleResult) -> dict:
++        """Generate AI tactical analysis of battle results."""
++        ...
+diff --git a/lagrange/export/__init__.py b/lagrange/export/__init__.py
+new file mode 100644
+index 0000000..a1b2c3d
+--- /dev/null
++++ b/lagrange/export/__init__.py
+@@ -0,0 +1,15 @@
++"""Export ship data in various formats (JSON5, CSV, XML)."""
++
++from .json5_exporter import export_to_json5
++from .csv_exporter import export_to_csv
++from .xml_exporter import export_to_xml
++
++__all__ = ["export_to_json5", "export_to_csv", "export_to_xml"]
+diff --git a/lagrange/templates/report.html b/lagrange/templates/report.html
+index e5f6g7h..i8j9k0l 100644
+--- a/lagrange/templates/report.html
++++ b/lagrange/templates/report.html
+@@ -1,15 +1,25 @@
+-<!-- V1 Legacy Report Template -->
++<!-- V2 Fleet Battle Report Template with AI Analysis -->
+ <!DOCTYPE html>
+ <html>
+ <head>
+     <title>Fleet Battle Report</title>
++    <link rel="stylesheet" href="/static/styles/report.css" />
+ </head>
+ <body>
+-    <h1>Battle Result</h1>
+-    <p>Winner: {{ winner }}</p>
+-    <p>Duration: {{ duration }}</p>
++    <div class="report-header">
++        <h1>{{ report.title }}</h1>
++        <p class="meta">Generated: {{ report.generated_at }} | Battle ID: {{ report.battle_id }}</p>
++    </div>
++
++    <div class="battle-outcome {{ report.outcome }}">
++        <h2>{{ report.outcome | upper }} - {{ report.winner_fleet }}</h2>
++        <p>Duration: {{ report.duration_seconds }}s | Rounds: {{ report.total_rounds }}</p>
++    </div>
++
++    {% if report.ai_analysis %}
++    <div class="ai-analysis">
++        <h3>AI Tactical Analysis</h3>
++        <p>{{ report.ai_analysis.summary }}</p>
++    </div>
++    {% endif %}
+ </body>
+ </html>

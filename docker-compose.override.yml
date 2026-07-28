@@ -1,0 +1,250 @@
+# ============================================================
+# Lagrange Tactical AI - Docker Compose Override (Development)
+# Overrides for docker-compose.yml with dev-specific settings
+# ============================================================
+
+version: "3.9"
+
+services:
+  # ---- Lagrange API server (dev mode with hot reload) ----
+  lagrange-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: dev
+      args:
+        USERNAME: lagrange
+        USER_UID: 1000
+        USER_GID: 1000
+    image: lagrange-api:dev
+    container_name: lagrange-api-dev
+    restart: unless-stopped
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - RELOAD=true
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-dev_admin_pass}
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-not-for-prod}
+      - DATABASE_PATH=/app/data/lagrange_dev.db
+      - CHROMA_DB_PATH=/app/data/chroma_db
+      - HOST=0.0.0.0
+      - PORT=3000
+      - RATE_LIMIT_MAX=1000
+    ports:
+      - "3000:3000"
+      - "5678:5678"
+    volumes:
+      - .:/app:delegated
+      - dev_data:/app/data
+      - dev_chroma:/app/chroma_db
+      - /app/node_modules
+      - /app/__pycache__
+    command: >
+      uvicorn main:app
+      --host 0.0.0.0
+      --port 3000
+      --reload
+      --reload-dir /app
+      --reload-include "*.py"
+      --reload-exclude "__pycache__*"
+      --log-level debug
+      --timeout-keep-alive 65
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    profiles:
+      - full
+      - api
+
+  # ---- Redis cache (development) ----
+  redis:
+    image: redis:7.2-alpine
+    container_name: lagrange-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - dev_redis:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: >
+      redis-server
+      /usr/local/etc/redis/redis.conf
+      --loglevel notice
+      --save ""
+      --appendonly no
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    profiles:
+      - full
+      - cache
+
+  # ---- ChromaDB vector store (development) ----
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: lagrange-chromadb-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - dev_chromadb:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+      - ALLOW_RESET=TRUE
+    profiles:
+      - full
+      - vector
+
+  # ---- Frontend dev server with HMR ----
+  lagrange-frontend:
+    image: node:20-alpine
+    container_name: lagrange-frontend-dev
+    working_dir: /app
+    volumes:
+      - .:/app:cached
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - LAGRANGE_API_URL=http://lagrange-api:3000
+      - WDS_SOCKET_PORT=0
+    command: >
+      sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 4000"
+    depends_on:
+      - lagrange-api
+    profiles:
+      - full
+      - frontend
+
+  # ---- Celery worker for async tasks ----
+  lagrange-worker:
+    image: lagrange-api:dev
+    container_name: lagrange-worker-dev
+    restart: unless-stopped
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+      - DATABASE_PATH=/app/data/lagrange_dev.db
+    volumes:
+      - .:/app
+      - dev_data:/app/data
+      - /app/__pycache__
+    command: >
+      celery -A lagrange.tasks worker
+      --loglevel=info
+      --concurrency=2
+      --pool=solo
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - full
+      - worker
+
+  # ---- Prometheus metrics collector ----
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: lagrange-prometheus-dev
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - dev_prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+      - "--log.level=info"
+    profiles:
+      - full
+      - monitoring
+
+  # ---- Grafana dashboards ----
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: lagrange-grafana-dev
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=lagrange_admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,redis-datasource
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - dev_grafana:/var/lib/grafana
+      - ./config/grafana.json:/etc/grafana/provisioning/dashboards/lagrange.json:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    profiles:
+      - full
+      - monitoring
+
+  # ---- Jaeger distributed tracing ----
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: lagrange-jaeger-dev
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - MEMORY_MAX_TRACES=50000
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    profiles:
+      - full
+      - tracing
+
+  # ---- Mail testing (MailHog) ----
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: lagrange-mailhog-dev
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    profiles:
+      - full
+      - mail
+
+volumes:
+  dev_data:
+    name: lagrange_dev_data
+  dev_chroma:
+    name: lagrange_dev_chroma
+  dev_chromadb:
+    name: lagrange_dev_chromadb
+  dev_redis:
+    name: lagrange_dev_redis
+  dev_prometheus:
+    name: lagrange_dev_prometheus
+  dev_grafana:
+    name: lagrange_dev_grafana
+
+networks:
+  default:
+    name: lagrange-dev-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

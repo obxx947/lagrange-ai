@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Battle Report - {{ report.title | default('Lagrange Tactical Analysis') }}</title>
+    <style>
+        :root {
+            --bg-primary: #0b1121;
+            --bg-card: #111827;
+            --border: #1e3a8a;
+            --text: #e0e8ff;
+            --accent: #60a5fa;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --damage-high: #ef4444;
+            --damage-mid: #f97316;
+            --damage-low: #eab308;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .report-header {
+            text-align: center;
+            padding: 30px;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, #111827 0%, #1e293b 50%, #111827 100%);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .report-header h1 {
+            color: var(--accent);
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .report-header .meta {
+            color: #93c5fd;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .report-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .report-section h2 {
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        /* Fleet Composition Table */
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .fleet-grid { grid-template-columns: 1fr; }
+        }
+
+        .fleet-card {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .fleet-card h3 {
+            color: #93c5fd;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            background: #1e293b;
+            color: var(--accent);
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #1e293b;
+        }
+        tr:hover td { background: #1e293b55; }
+
+        /* Damage Bar */
+        .damage-bar {
+            display: inline-block;
+            height: 8px;
+            border-radius: 4px;
+            min-width: 60px;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        .damage-bar.high { background: var(--damage-high); }
+        .damage-bar.mid  { background: var(--damage-mid); }
+        .damage-bar.low  { background: var(--damage-low); }
+
+        /* Battle Result Summary */
+        .battle-outcome {
+            text-align: center;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .battle-outcome.victory {
+            background: linear-gradient(135deg, #064e3b22, #065f4622);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+        .battle-outcome.defeat {
+            background: linear-gradient(135deg, #7f1d1d22, #991b1b22);
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+        .battle-outcome.draw {
+            background: linear-gradient(135deg, #713f1222, #92400e22);
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+        .battle-outcome .result-text { font-size: 26px; font-weight: bold; }
+        .battle-outcome .summary-stats { font-size: 13px; margin-top: 10px; color: var(--text); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .stat-box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 13px;
+            text-align: center;
+        }
+        .stat-box .stat-label { font-size: 10px; color: #93c5fd; text-transform: uppercase; }
+        .stat-box .stat-value { font-size: 22px; font-weight: bold; color: #f0f9ff; margin: 4px 0; }
+
+        /* Ship Performance List */
+        .performance-list .ship-row {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #1e293b;
+            gap: 15px;
+        }
+        .performance-list .ship-icon {
+            width: 36px; height: 36px;
+            background: var(--border);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .performance-list .ship-name { flex: 2; font-weight: bold; }
+        .performance-list .ship-kills { flex: 1; color: var(--success); }
+        .performance-list .ship-losses { flex: 1; color: var(--danger); }
+        .performance-list .ship-dmg { flex: 1; color: var(--warning); }
+
+        /* Footer */
+        .report-footer {
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            padding: 15px;
+            margin-top: 20px;
+            border-top: 1px solid #1e293b;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: #fff; color: #000; }
+            .report-section { border-color: #ccc; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Report Header -->
+    <div class="report-header">
+        <h1>{{ report.title | default('Fleet Battle Report') }}</h1>
+        <div class="meta">
+            Generated: {{ report.generated_at | default(now().strftime('%Y-%m-%d %H:%M:%S')) }} |
+            Battle ID: {{ report.battle_id | default('N/A') }} |
+            Simulation Seed: {{ report.seed | default('N/A') }}
+        </div>
+    </div>
+
+    <!-- Battle Outcome -->
+    {% set outcome = report.outcome | lower %}
+    <div class="battle-outcome {{ outcome }}">
+        <div class="result-text">
+            {% if outcome == 'victory' %}
+                VICTORY - Fleet {{ report.winner_fleet | default('Alpha') }}
+            {% elif outcome == 'defeat' %}
+                DEFEAT - Fleet {{ report.winner_fleet | default('Alpha') }}
+            {% else %}
+                DRAW - Inconclusive
+            {% endif %}
+        </div>
+        <div class="summary-stats">
+            Duration: {{ report.duration_seconds | default(0) }}s |
+            Total Rounds: {{ report.total_rounds | default(0) }} |
+            Ships Lost: {{ report.total_ships_lost | default(0) }} |
+            Total Damage: {{ report.total_damage | default(0) | format_number }}
+        </div>
+    </div>
+
+    <!-- Fleet Composition -->
+    <div class="report-section">
+        <h2>Fleet Composition</h2>
+        <div class="fleet-grid">
+            {% for fleet in report.fleets | default([]) %}
+            <div class="fleet-card">
+                <h3>{{ fleet.name | default('Fleet ' ~ loop.index) }}</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ship</th>
+                            <th>Type</th>
+                            <th>Count</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ship in fleet.ships | default([]) %}
+                        <tr>
+                            <td>{{ ship.name }}</td>
+                            <td>{{ ship.type | default('Unknown') }}</td>
+                            <td>{{ ship.initial_count | default(0) }}</td>
+                            <td>
+                                {% set survived = ship.final_count | default(0) %}
+                                {% set total = ship.initial_count | default(1) %}
+                                {% set ratio = survived / total * 100 %}
+                                <span class="damage-bar {{ 'low' if ratio > 66 else ('mid' if ratio > 33 else 'high') }}"
+                                      style="width:{{ ratio | int }}px;"></span>
+                                {{ survived }}/{{ total }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Battle Statistics -->
+    <div class="report-section">
+        <h2>Battle Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Total Damage Dealt</div>
+                <div class="stat-value">{{ report.total_damage | default(0) | format_number }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Critical Hits</div>
+                <div class="stat-value">{{ report.critical_hits | default(0) }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Shield Damage</div>
+                <div class="stat-value">{{ report.shield_damage | default(0) | format_number }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Armor Damage</div>
+                <div class="stat-value">{{ report.armor_damage | default(0) | format_number }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Weapons Fired</div>
+                <div class="stat-value">{{ report.weapons_fired | default(0) }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Hit Rate</div>
+                <div class="stat-value">{{ "%.1f" | format(report.hit_rate | default(0) * 100) }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ship Performance -->
+    <div class="report-section">
+        <h2>Ship Performance Rankings</h2>
+        <div class="performance-list">
+            {% for ship in report.ship_performance | default([]) | sort(attribute='damage_dealt', reverse=True) %}
+            <div class="ship-row">
+                <div class="ship-icon"></div>
+                <div class="ship-name">{{ ship.name }}</div>
+                <div class="ship-kills">K: {{ ship.kills | default(0) }}</div>
+                <div class="ship-losses">L: {{ ship.losses | default(0) }}</div>
+                <div class="ship-dmg">
+                    DMG: {{ ship.damage_dealt | default(0) | format_number }}
+                    <span class="damage-bar {{ 'high' if ship.damage_dealt > 50000 else ('mid' if ship.damage_dealt > 10000 else 'low') }}"
+                          style="width:{{ (ship.damage_dealt | default(0) / 1000) | int }}px;"></span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- AI Tactical Analysis -->
+    <div class="report-section">
+        <h2>AI Tactical Analysis</h2>
+        {% if report.ai_analysis %}
+            <p>{{ report.ai_analysis.summary | default('No summary available.') }}</p>
+            {% for recommendation in report.ai_analysis.recommendations | default([]) %}
+            <div style="padding: 8px; margin: 6px 0; background: #0f172a; border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;">
+                <strong>{{ recommendation.priority | default('INFO') }}:</strong> {{ recommendation.text }}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #64748b;">AI analysis not available for this battle.</p>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <div class="report-footer">
+        Lagrange Tactical AI v{{ report.engine_version | default('1.0.0') }} |
+        Report generated by Jinja2 Template Engine |
+        Confidential - For tactical planning only
+    </div>
+
+</body>
+</html>

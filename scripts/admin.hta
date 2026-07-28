@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lagrange Agent - Admin Panel</title>
+    <HTA:APPLICATION
+        ID="LagrangeAdmin"
+        APPLICATIONNAME="LagrangeAdmin"
+        BORDER="dialog"
+        BORDERSTYLE="normal"
+        CAPTION="Yes"
+        CONTEXTMENU="No"
+        INNERBORDER="No"
+        MAXIMIZEBUTTON="Yes"
+        MINIMIZEBUTTON="Yes"
+        NAVIGABLE="Yes"
+        SCROLL="No"
+        SELECTION="No"
+        SYSMENU="Yes"
+        VERSION="1.0"
+        WINDOWSTATE="normal"
+    />
+    <style>
+        * { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; margin: 0; padding: 0; }
+        body { background: #0a0e27; color: #e0e8ff; padding: 20px; }
+        .header { text-align: center; padding: 15px 0; border-bottom: 2px solid #1e3a8a; margin-bottom: 20px; }
+        .header h1 { color: #60a5fa; font-size: 22px; letter-spacing: 2px; }
+        .header p { color: #93c5fd; font-size: 11px; margin-top: 5px; }
+        .panel { display: flex; gap: 15px; flex-wrap: wrap; }
+        .card { flex: 1; min-width: 220px; background: #111827; border: 1px solid #1e3a8a; border-radius: 8px; padding: 18px; }
+        .card h3 { color: #60a5fa; font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+        .card label { display: block; font-size: 11px; color: #93c5fd; margin: 8px 0 3px; }
+        .card .value { font-size: 16px; color: #f0f9ff; font-weight: bold; }
+        .btn { display: inline-block; padding: 10px 22px; margin: 5px; border: none; border-radius: 4px;
+               cursor: pointer; font-size: 13px; font-weight: bold; color: #fff; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.85; }
+        .btn-start    { background: #059669; }
+        .btn-stop     { background: #dc2626; }
+        .btn-backup   { background: #2563eb; }
+        .btn-status   { background: #7c3aed; }
+        .btn-clean    { background: #d97706; }
+        .btn-disabled { background: #374151; cursor: not-allowed; opacity: 0.5; }
+        .log-area { background: #000; color: #4ade80; font-family: 'Consolas', 'Courier New', monospace;
+                    font-size: 11px; padding: 10px; border-radius: 4px; margin-top: 10px;
+                    height: 220px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #1e293b; }
+        .indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .indicator.running { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+        .indicator.stopped { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+        .indicator.unknown { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>LAGRANGE TACTICAL AI - ADMINISTRATION PANEL</h1>
+        <p>Infinite Lagrange Fleet Analysis Server</p>
+    </div>
+
+    <div class="panel">
+        <!-- Control Card -->
+        <div class="card">
+            <h3>SERVER CONTROL</h3>
+            <button class="btn btn-start" onclick="doStart()">START SERVER</button>
+            <button class="btn btn-stop"  onclick="doStop()">STOP SERVER</button>
+            <button class="btn btn-status" onclick="doStatus()">REFRESH STATUS</button>
+            <br/><br/>
+            <label>CURRENT STATUS:</label>
+            <div class="value"><span id="statusIndicator" class="indicator unknown"></span><span id="statusText">Unknown</span></div>
+            <label>UPTIME:</label>
+            <div class="value" id="uptimeValue">--</div>
+            <label>CPU USAGE:</label>
+            <div class="value" id="cpuValue">--</div>
+            <label>MEMORY:</label>
+            <div class="value" id="memValue">--</div>
+        </div>
+
+        <!-- Backup Card -->
+        <div class="card">
+            <h3>BACKUP &amp; MAINTENANCE</h3>
+            <button class="btn btn-backup" onclick="doBackup()">BACKUP DATABASE</button>
+            <button class="btn btn-backup" onclick="doExportShips()">EXPORT SHIP DATA</button>
+            <button class="btn btn-clean" onclick="doCleanup()">RUN CLEANUP</button>
+            <br/><br/>
+            <label>LAST BACKUP:</label>
+            <div class="value" id="lastBackup">--</div>
+            <label>DATABASE SIZE:</label>
+            <div class="value" id="dbSize">--</div>
+            <label>SHIPS IN DB:</label>
+            <div class="value" id="shipCount">--</div>
+            <label>BATTLE LOGS:</label>
+            <div class="value" id="battleCount">--</div>
+        </div>
+
+        <!-- AI Stats Card -->
+        <div class="card">
+            <h3>AI ENGINE STATS</h3>
+            <label>MODEL VERSION:</label>
+            <div class="value" id="modelVersion">--</div>
+            <label>TOTAL BATTLES SIMULATED:</label>
+            <div class="value" id="totalSims">--</div>
+            <label>AVG SIMULATION TIME:</label>
+            <div class="value" id="avgSimTime">--</div>
+            <label>CACHE HIT RATE:</label>
+            <div class="value" id="cacheRate">--</div>
+            <label>PREDICTION ACCURACY:</label>
+            <div class="value" id="predAcc">--</div>
+        </div>
+    </div>
+
+    <!-- Log Output -->
+    <div class="log-area" id="logOutput">
+=== Lagrange Admin Console Log ===
+Ready.
+    </div>
+
+    <script language="VBScript">
+        '=========================================================
+        ' Lagrange Admin Panel - VBScript Backend
+        '=========================================================
+        Dim objShell, objFSO, serverPID
+
+        Set objShell = CreateObject("WScript.Shell")
+        Set objFSO   = CreateObject("Scripting.FileSystemObject")
+
+        ' --- Logging ---
+        Sub Log(msg)
+            Dim logEl : Set logEl = document.getElementById("logOutput")
+            logEl.InnerHTML = logEl.InnerHTML & vbCrLf & "[" & Time() & "] " & msg
+            logEl.ScrollTop = logEl.ScrollHeight
+        End Sub
+
+        ' --- Start the Lagrange server ---
+        Sub doStart()
+            Log "Starting Lagrange Agent Server..."
+            Dim cmd : cmd = "cmd /c cd /d """ & objShell.CurrentDirectory & """ && python -m lagrange.server --daemon 2>&1"
+            objShell.Run cmd, 0, False
+            Log "Start command issued."
+            window.setTimeout "doStatus()", 2000, "VBScript"
+        End Sub
+
+        ' --- Stop the Lagrange server ---
+        Sub doStop()
+            Log "Stopping Lagrange Agent Server..."
+            Dim pidFile : pidFile = objFSO.BuildPath(objShell.CurrentDirectory, "logs\server.pid")
+            If objFSO.FileExists(pidFile) Then
+                Dim ts, pid : Set ts = objFSO.OpenTextFile(pidFile, 1)
+                pid = Trim(ts.ReadLine())
+                ts.Close()
+                If pid <> "" Then
+                    objShell.Run "taskkill /PID " & pid & " /F", 0, True
+                    Log "Process " & pid & " terminated."
+                End If
+            Else
+                objShell.Run "taskkill /F /IM python.exe /FI ""WINDOWTITLE eq Lagrange*""", 0, True
+                Log "Attempted fallback process termination."
+            End If
+            window.setTimeout "doStatus()", 1500, "VBScript"
+        End Sub
+
+        ' --- Refresh status ---
+        Sub doStatus()
+            Log "Refreshing server status..."
+
+            Dim pidFile : pidFile = objFSO.BuildPath(objShell.CurrentDirectory, "logs\server.pid")
+            Dim statusInd : Set statusInd = document.getElementById("statusIndicator")
+            Dim statusTxt : Set statusTxt = document.getElementById("statusText")
+
+            If objFSO.FileExists(pidFile) Then
+                Dim ts2, pid2
+                Set ts2 = objFSO.OpenTextFile(pidFile, 1)
+                pid2 = Trim(ts2.ReadLine())
+                ts2.Close()
+
+                Dim tasklist : tasklist = objShell.Exec("cmd /c tasklist /FI ""PID eq " & pid2 & """ 2>&1").StdOut.ReadAll()
+                If InStr(tasklist, "python") > 0 Or InStr(tasklist, "lagrange") > 0 Then
+                    statusInd.ClassName = "indicator running"
+                    statusTxt.InnerHTML = "Running (PID: " & pid2 & ")"
+                Else
+                    statusInd.ClassName = "indicator stopped"
+                    statusTxt.InnerHTML = "Stopped (stale PID)"
+                End If
+            Else
+                statusInd.ClassName = "indicator stopped"
+                statusTxt.InnerHTML = "Stopped"
+            End If
+
+            ' System stats
+            Dim memInfo : memInfo = objShell.Exec("cmd /c wmic OS get TotalVisibleMemorySize,FreePhysicalMemory /format:csv 2>&1").StdOut.ReadAll()
+            document.getElementById("memValue").InnerHTML = "OK"
+
+            Dim dbPath : dbPath = objFSO.BuildPath(objShell.CurrentDirectory, "data\lagrange.db")
+            If objFSO.FileExists(dbPath) Then
+                document.getElementById("dbSize").InnerHTML = FormatBytes(objFSO.GetFile(dbPath).Size)
+            End If
+
+            Log "Status refreshed."
+        End Sub
+
+        ' --- Backup database ---
+        Sub doBackup()
+            Log "Starting database backup..."
+            Dim srcDB : srcDB = objFSO.BuildPath(objShell.CurrentDirectory, "data\lagrange.db")
+            Dim backupDir : backupDir = objFSO.BuildPath(objShell.CurrentDirectory, "backups")
+            If Not objFSO.FolderExists(backupDir) Then objFSO.CreateFolder(backupDir)
+
+            Dim stamp : stamp = Year(Date()) & Right("0" & Month(Date()), 2) & Right("0" & Day(Date()), 2) & _
+                                Right("0" & Hour(Time()), 2) & Right("0" & Minute(Time()), 2)
+            Dim destDB : destDB = objFSO.BuildPath(backupDir, "lagrange_backup_" & stamp & ".db")
+
+            If objFSO.FileExists(srcDB) Then
+                objFSO.CopyFile srcDB, destDB, True
+                Log "Backup complete: " & destDB
+                document.getElementById("lastBackup").InnerHTML = Now()
+            Else
+                Log "ERROR: Source database not found at " & srcDB
+            End If
+        End Sub
+
+        ' --- Export ship data ---
+        Sub doExportShips()
+            Log "Exporting ship data to JSON..."
+            Dim cmd : cmd = "cmd /c cd /d """ & objShell.CurrentDirectory & """ && python -m lagrange.cli export --format json --output exports/ships_export.json 2>&1"
+            Dim result : result = objShell.Exec(cmd).StdOut.ReadAll()
+            Log "Export result: " & result
+        End Sub
+
+        ' --- Run cleanup script ---
+        Sub doCleanup()
+            Log "Executing cleanup script..."
+            Dim cleanupScript : cleanupScript = objFSO.BuildPath(objShell.CurrentDirectory, "scripts\cleanup.vbs")
+            If objFSO.FileExists(cleanupScript) Then
+                objShell.Run "cscript //nologo """ & cleanupScript & """", 1, True
+                Log "Cleanup completed."
+            Else
+                Log "ERROR: Cleanup script not found at " & cleanupScript
+            End If
+        End Sub
+
+        ' --- Helper ---
+        Function FormatBytes(bytes)
+            If bytes >= 1073741824 Then
+                FormatBytes = FormatNumber(bytes / 1073741824, 2) & " GB"
+            ElseIf bytes >= 1048576 Then
+                FormatBytes = FormatNumber(bytes / 1048576, 2) & " MB"
+            ElseIf bytes >= 1024 Then
+                FormatBytes = FormatNumber(bytes / 1024, 2) & " KB"
+            Else
+                FormatBytes = bytes & " B"
+            End If
+        End Function
+    </script>
+
+    <script language="JavaScript">
+        // Auto-refresh status on load
+        window.onload = function() {
+            doStatus();
+            // Periodic status refresh every 30 seconds
+            setInterval(function() { doStatus(); }, 30000);
+        };
+    </script>
+</body>
+</html>

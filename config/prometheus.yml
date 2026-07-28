@@ -1,0 +1,209 @@
+# ============================================================
+# Lagrange Tactical AI - Prometheus Monitoring Configuration
+# Scrape configuration for Lagrange AI fleet analysis platform
+# ============================================================
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: lagrange-cluster
+    environment: production
+    application: lagrange-tactical-ai
+    game: infinite-lagrange
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+    - targets:
+      - alertmanager-replica:9093
+      labels:
+        severity: warning
+  - path_prefix: /alertmanager
+    scheme: https
+    basic_auth:
+      username: lagrange_alerts
+      password_file: /etc/prometheus/secrets/alertmanager_password
+    static_configs:
+    - targets:
+      - alertmanager-ha.example.com:443
+
+# Alert rules
+rule_files:
+  - /etc/prometheus/rules/lagrange_alerts.yml
+  - /etc/prometheus/rules/lagrange_slos.yml
+  - /etc/prometheus/rules/lagrange_battle_engine.yml
+  - /etc/prometheus/rules/lagrange_api_alerts.yml
+
+# Scrape configurations
+scrape_configs:
+  # ---- Lagrange AI Application ----
+  - job_name: lagrange-agent
+    metrics_path: /metrics
+    scheme: http
+    honor_labels: true
+    honor_timestamps: true
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+    - targets:
+      - lagrange-agent-svc.lagrange.svc.cluster.local:3000
+      labels:
+        app: lagrange-agent
+        component: backend
+        tier: application
+    relabel_configs:
+    - source_labels: [__address__]
+      target_label: instance
+      regex: '([^:]+):\d+'
+      replacement: '${1}'
+    - source_labels: [__address__]
+      target_label: __param_target
+      regex: '([^:]+)(:\d+)?'
+      replacement: '${1}'
+    metric_relabel_configs:
+    - source_labels: [__name__]
+      regex: 'go_.*|process_.*|python_.*'
+      action: drop
+
+  # ---- Kubernetes Pod Monitoring ----
+  - job_name: kubernetes-pods
+    kubernetes_sd_configs:
+    - role: pod
+      namespaces:
+        names:
+        - lagrange
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+      action: replace
+      target_label: __scheme__
+      regex: (.+)
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      target_label: __address__
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: kubernetes_namespace
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: kubernetes_pod_name
+    - source_labels: [__meta_kubernetes_pod_node_name]
+      action: replace
+      target_label: kubernetes_node_name
+
+  # ---- Node Exporter (System Metrics) ----
+  - job_name: node-exporter
+    scrape_interval: 30s
+    static_configs:
+    - targets:
+      - node-exporter.lagrange.svc.cluster.local:9100
+      labels:
+        component: system
+    - targets:
+      - node-exporter-node2:9100
+      labels:
+        component: system
+
+  # ---- Redis Exporter ----
+  - job_name: redis-exporter
+    scrape_interval: 30s
+    static_configs:
+    - targets:
+      - lagrange-redis-svc.lagrange.svc.cluster.local:9121
+      labels:
+        component: cache
+        service: redis
+
+  # ---- SQLite Exporter ----
+  - job_name: sqlite-exporter
+    scrape_interval: 60s
+    static_configs:
+    - targets:
+      - sqlite-exporter.lagrange.svc.cluster.local:9399
+      labels:
+        component: database
+        db_engine: sqlite
+        db_name: lagrange
+
+  # ---- DeepSeek API Health Check ----
+  - job_name: deepseek-api-monitor
+    metrics_path: /v1/models
+    scheme: https
+    scrape_interval: 60s
+    scrape_timeout: 15s
+    static_configs:
+    - targets:
+      - api.deepseek.com:443
+      labels:
+        service: deepseek-api
+        component: external-ai
+    - targets:
+      - api.deepseek.com:443
+      labels:
+        service: deepseek-api
+        component: external-ai
+        region: fallback
+
+  # ---- Prometheus Self-Monitoring ----
+  - job_name: prometheus
+    scrape_interval: 30s
+    static_configs:
+    - targets:
+      - localhost:9090
+      labels:
+        component: monitoring
+
+  # ---- Nginx Ingress Metrics ----
+  - job_name: nginx-ingress
+    kubernetes_sd_configs:
+    - role: pod
+      namespaces:
+        names:
+        - ingress-nginx
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      target_label: __address__
+      regex: (.+)
+      replacement: $1:10254
+
+# ---- Storage ----
+storage:
+  tsdb:
+    path: /prometheus
+    retention:
+      time: 30d
+      size: 50GB
+    wal:
+      retention:
+        time: 4h
+        size: 2GB
+
+# ---- Remote Write (Thanos/Cortex) ----
+# remote_write:
+#   - url: http://thanos-receive.lagrange.svc.cluster.local:19291/api/v1/receive
+#     remote_timeout: 30s
+#     queue_config:
+#       capacity: 2500
+#       max_shards: 200
+#       min_shards: 1
+#       max_samples_per_send: 500
+#       batch_send_deadline: 5s

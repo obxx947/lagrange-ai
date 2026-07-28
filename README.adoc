@@ -1,0 +1,214 @@
+= 拉格朗日AI 战术推演中心
+Lagrange AI Community <dev@lagrange-ai.dev>
+v2.0.0, 2026-07-27
+:description: Infinite Lagrange AI Tactical Analysis Center - Fleet combat simulator and ship intelligence platform
+:keywords: infinite lagrange, game ai, tactical analysis, fleet combat, ship database, rag, deepseek
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+:source-highlighter: rouge
+
+== 概述
+
+《无尽的拉格朗日》AI战术推演中心是一个基于 RAG (Retrieval-Augmented Generation)
+技术的专业战斗推演智能体系统。系统整合了169艘舰船的完整数据库、详细的战斗机制
+资料库，并通过 DeepSeek 大模型提供 AI 驱动的战术分析，为玩家提供舰队搭配、
+战斗策略、武器选择等全方位战术决策支持。
+
+=== 核心功能
+
+* *AI战术顾问* — 基于RAG技术的智能问答系统，可回答关于舰船搭配、
+  战斗策略、武器选择等复杂战术问题
+* *战斗模拟器* — 可视化编队搭建界面，AI分析对阵胜负概率，
+  提供详细战术建议和改进方案
+* *舰船百科全书* — 收录169艘舰船的完整数据，支持按类型、阵营、
+  武器系统分类筛选和全文搜索
+* *舰队优化器* — 基于数学优化模型的舰队组合推荐引擎，
+  支持多目标优化（火力、生存、机动）
+* *混合检索* — FAISS向量检索 + TF-IDF关键词匹配 + jieba分词，
+  中英文混合检索策略
+
+== 系统架构
+
+=== 后端技术栈
+
+[cols="1,2"]
+|===
+| 组件 | 技术选型
+| Web框架 | FastAPI 0.110+ (Python 3.12)
+| 数据库 | SQLite via SQLAlchemy 2.0 + aiosqlite
+| 向量检索 | FAISS + TF-IDF + jieba + BM25
+| AI模型 | DeepSeek Chat API (OpenAI SDK)
+| 认证 | JWT + bcrypt (cost=12)
+| 异步任务 | Celery + Redis
+| 监控 | Prometheus + Grafana + Jaeger
+| 前端 | React 18 + TypeScript + Webpack
+|===
+
+=== 核心模块
+
+[source,text]
+----
+main.py                  # FastAPI 主入口与路由注册
+config.py                # Pydantic Settings 配置管理
+database.py              # SQLAlchemy 异步数据库层
+battle_engine.py         # 战斗模拟核心引擎
+fleet_optimizer.py       # 舰队组合优化推荐算法
+rag_service.py           # RAG混合检索与重排序
+chat_service.py          # AI对话服务（RAG增强提示词）
+game_knowledge.py        # 游戏领域知识注入与结构化
+auth_service.py          # JWT认证与权限控制
+admin_routes.py          # 管理员接口
+api_routes.py            # 公共API路由
+parse_ships.js           # Node.js 舰船HTML解析器
+export_ships.py          # 舰船数据导出工具
+----
+
+== 数据表结构
+
+[cols="1,3,1", options="header"]
+|===
+| 表名 | 用途 | 数据保留策略
+| users | 用户账号 + 平台Token余额 | 永久保存
+| session_login | 登录会话日志 | 7天自动清理
+| chat_record | AI对话记录（含RAG上下文） | 14天自动清理
+| recharge_log | 管理员充值对账日志 | 永久保存
+| simulator_save | 模拟器编队存档（绑定用户） | 永久保存
+|===
+
+== 战斗引擎公式
+
+=== 能量伤害
+
+[stem]
+++++
+D_{energy} = D_{base} \times (1 + B_{damage} - T_{shield}) \times A_{tune} \times S_{strategy} \times C_{crit}
+++++
+
+=== 实弹/动能伤害
+
+[stem]
+++++
+D_{kinetic} = \max(D_{base} \times (1 + B_{damage}) - T_{armor},\ D_{base} \times 0.10) \times A_{tune} \times P_{hit}
+++++
+
+=== 拦截机制
+
+[stem]
+++++
+R_{intercept} = 1 - (1 - R_{self}) \times \prod_i(1 - R_{row,i}) \times \prod_j(1 - R_{global,j})
+++++
+
+=== 舰队总DPM评估
+
+[stem]
+++++
+\text{DPM}_{fleet} = \sum_i (\text{DPM}_{ship,i} \times S_i(t))
+++++
+
+== API 端点
+
+[cols="1,2,3", options="header"]
+|===
+| 方法 | 路径 | 功能
+| POST | /api/register | 用户注册（赠10000 Token）
+| POST | /api/login | 用户登录（JWT 7天有效）
+| GET | /api/user/me | 获取用户信息及Token余额
+| POST | /api/chat | AI战术对话（RAG增强+Token扣减）
+| GET | /api/ships | 查询169艘舰船数据库
+| GET | /api/ships/{id} | 单舰详细数据
+| POST | /api/simulator/save | 保存编队配置
+| GET | /api/simulator/saves | 获取编队存档列表
+| POST | /api/simulator/analyze | AI战术对阵分析
+| POST | /api/admin/recharge | 管理员充值
+| GET | /api/admin/logs | 充值对账日志
+| POST | /api/admin/backup | 数据库备份
+| POST | /api/rebuild-index | 重建向量索引
+| GET | /health | 服务健康检查
+| GET | /metrics | Prometheus监控指标
+|===
+
+== 安装部署
+
+=== 环境要求
+
+* Python 3.10 ~ 3.12
+* Node.js 18+ (舰船数据解析)
+* Redis 7+ (可选，缓存加速)
+* 2GB+ 磁盘空间
+
+=== Docker 部署
+
+[source,bash]
+----
+git clone https://github.com/lagrange-ai/tactical-center.git
+cd tactical-center
+cp .env.template .env
+# 编辑 .env 填入 DeepSeek API Key
+docker compose up -d
+# 访问 http://localhost:3000
+----
+
+=== 手动安装
+
+[source,bash]
+----
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.template .env
+node parse_ships.js lagrange_docs/lglrmax.html lagrange_docs/ship_database.json
+python -c "from rag_service import build_vector_index; build_vector_index()"
+python main.py
+----
+
+=== Kubernetes 部署
+
+[source,bash]
+----
+kubectl create namespace lagrange
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+----
+
+== 环境变量
+
+[cols="1,2,1", options="header"]
+|===
+| 变量名 | 说明 | 默认值
+| DEEPSEEK_API_KEY | DeepSeek API密钥 | (必填)
+| DEEPSEEK_BASE_URL | DeepSeek API地址 | api.deepseek.com
+| DEEPSEEK_CHAT_MODEL | 模型名称 | deepseek-chat
+| ADMIN_PASSWORD | 管理员密码 | (必填)
+| JWT_SECRET | JWT签名密钥 | (必填)
+| DATABASE_PATH | SQLite路径 | lagrange.db
+| HOST | 监听地址 | 127.0.0.1
+| PORT | 监听端口 | 3000
+| RATE_LIMIT_MAX | 每小时请求限制 | 10
+|===
+
+== 贡献指南
+
+欢迎贡献！请阅读 link:CONTRIBUTING.md[贡献指南] 了解如何参与。
+提交PR前请确保：
+
+. 通过所有测试: `make test`
+. 代码符合规范: `ruff check . && black .`
+. 添加必要测试: 新功能必须有对应单元测试
+
+== 安全
+
+发现安全漏洞请发送至 mailto:security@lagrange-ai.dev[安全邮箱]，
+参见 link:SECURITY.md[安全策略] 了解完整流程。
+
+== 许可证
+
+MIT License。本项目仅供玩家社区学习交流使用，与网易及游戏官方无关。
+
+== 致谢
+
+感谢《无尽的拉格朗日》玩家社区的热情支持与数据贡献。

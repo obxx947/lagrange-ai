@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API设置 — 拉格朗日智能体</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Microsoft YaHei','PingFang SC',sans-serif;background:#0a0e1a;color:#e8f4ff;min-height:100vh;display:flex;justify-content:center;padding:20px}
+:root{--bg-card:#1a2332;--border:#2d4a6f;--blue:#4a9eff;--cyan:#00d4ff;--gold:#ffd700;--green:#2ed573;--red:#ff4757;--t1:#e8f4ff;--t2:#8ba3c7;--t3:#5a7a9a}
+.container{max-width:520px;width:100%}
+h1{font-size:1.5rem;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:var(--t3);font-size:0.75rem;margin-bottom:24px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:14px}
+.ct{font-size:0.9rem;font-weight:700;margin-bottom:16px}
+label{display:block;font-size:0.75rem;color:var(--t2);margin-bottom:4px}
+input,select{width:100%;padding:10px 14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;color:var(--t1);font-size:0.82rem;outline:none;margin-bottom:12px;font-family:monospace}
+input:focus,select:focus{border-color:var(--blue)}
+.pwd-wrap{position:relative}
+.pwd-wrap input{padding-right:44px}
+.pwd-wrap .eye{position:absolute;right:8px;top:8px;background:none;border:none;color:var(--t2);cursor:pointer;font-size:1rem;padding:4px 8px}
+.hint{font-size:0.62rem;color:var(--t3);margin-top:-8px;margin-bottom:10px;line-height:1.5}
+.hint a{color:var(--blue)}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.row label{width:90px;flex-shrink:0;margin-bottom:0}
+.row input{flex:1;margin-bottom:0}
+.range-wrap{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.range-wrap input[type=range]{flex:1;margin-bottom:0;accent-color:var(--blue);padding:0}
+.range-wrap .val{color:var(--gold);font-size:0.75rem;font-weight:600;min-width:55px;text-align:right}
+.bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:4px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));border-radius:2px;transition:width 0.3s}
+.btn-row{display:flex;gap:8px;margin-top:16px}
+.btn{padding:10px 20px;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s}
+.btn-p{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#000}
+.btn-p:hover{box-shadow:0 0 20px rgba(74,158,255,0.4)}
+.btn-s{background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--t1)}
+.btn-s:hover{border-color:var(--blue)}
+.btn-g{background:rgba(46,213,115,0.15);border:1px solid var(--green);color:var(--green)}
+.btn-g:hover{background:rgba(46,213,115,0.25)}
+.toast{position:fixed;top:20px;right:20px;padding:10px 18px;border-radius:8px;font-size:0.78rem;z-index:999;transition:all 0.3s;opacity:0;transform:translateY(-10px)}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:#1a3a2a;border:1px solid var(--green);color:var(--green)}
+.toast.err{background:#3a1a1a;border:1px solid var(--red);color:var(--red)}
+.nav{text-align:center;margin-top:16px}
+.nav a{color:var(--t3);font-size:0.7rem;text-decoration:none;margin:0 8px}
+.nav a:hover{color:var(--blue)}
+.test-ok{color:var(--green);font-size:0.7rem;margin-left:8px}
+.test-fail{color:var(--red);font-size:0.7rem;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>⚙️ API 设置</h1>
+<p class="sub">支持所有 OpenAI 兼容接口（DeepSeek / OpenAI / 硅基流动 / 本地模型等）</p>
+
+<div class="card">
+<div class="ct">🔑 API 连接</div>
+
+<label>API Key</label>
+<div class="pwd-wrap">
+<input type="password" id="api_key" placeholder="sk-...">
+<button class="eye" onclick="togglePwd()" title="显示/隐藏">👁</button>
+</div>
+<div class="hint"><a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek获取Key</a> · <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI获取Key</a> · 其他厂商类似</div>
+
+<label>API 地址</label>
+<input type="text" id="api_url" placeholder="https://api.deepseek.com">
+<div class="hint">
+填 <b>基础地址</b>，不要带 /v1/chat/completions<br>
+✅ <code style="color:var(--green)">https://api.deepseek.com</code><br>
+✅ <code style="color:var(--green)">https://api.openai.com</code><br>
+✅ <code style="color:var(--green)">https://api.siliconflow.cn</code><br>
+❌ <code style="color:var(--red)">https://api.deepseek.com/v1/chat/completions</code>
+</div>
+
+<label>模型名</label>
+<input type="text" id="model" placeholder="deepseek-chat">
+<div class="hint">常用: deepseek-chat · deepseek-reasoner · gpt-4o · gpt-4o-mini · 按你的API提供商文档填写</div>
+
+<button class="btn btn-g" onclick="testConn()" style="width:100%">🔍 测试连接</button>
+<span id="testResult"></span>
+</div>
+
+<div class="card">
+<div class="ct">📊 上下文窗口</div>
+<div class="range-wrap">
+<label style="width:auto">最大 Token 数</label>
+<input type="range" id="max_tokens" min="10000" max="1000000" step="10000" value="100000" oninput="upEst()">
+<span class="val" id="max_tokens_val">10万</span>
+</div>
+<div class="bar"><div class="bar-fill" id="bar" style="width:10%"></div></div>
+<div class="hint" style="margin-top:4px">当前配置预估占用 <b id="est" style="color:var(--gold)">5,000</b> tokens（不含知识库检索结果）。超过上限自动裁剪最早对话。</div>
+</div>
+
+<div class="btn-row">
+<button class="btn btn-s" onclick="resetCfg()">🔄 恢复默认</button>
+<button class="btn btn-p" onclick="saveCfg()">💾 保存配置</button>
+</div>
+<div class="nav">
+<a href="/">⚓ 模拟器</a> · <a href="/chat">🤖 AI对话</a> · <a href="/intro">📖 项目介绍</a>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='/api/config';
+
+function togglePwd(){
+    const el=document.getElementById('api_key');
+    el.type=el.type==='password'?'text':'password';
+}
+
+function upEst(){
+    const v=parseInt(document.getElementById('max_tokens').value)||100000;
+    document.getElementById('max_tokens_val').textContent=(v/10000).toFixed(0)+'万';
+    const est=2500; // system prompt + 5 rounds
+    document.getElementById('est').textContent=est.toLocaleString();
+    document.getElementById('bar').style.width=Math.min(100,(est/v)*100)+'%';
+}
+
+async function load(){
+    try{
+        const r=await fetch(API);
+        if(!r.ok) return;
+        const c=await r.json();
+        const ak=document.getElementById('api_key');
+        ak.value=c.llm_api_key||'';
+        document.getElementById('api_url').value=c.llm_api_url||'https://api.deepseek.com';
+        document.getElementById('model').value=c.llm_model||'deepseek-chat';
+        const mt=document.getElementById('max_tokens');
+        mt.value=c.max_tokens||100000;
+        mt.dispatchEvent(new Event('input'));
+    }catch(e){}
+}
+
+async function saveCfg(){
+    const cfg={
+        llm_provider:'deepseek',
+        llm_api_key:document.getElementById('api_key').value.trim(),
+        llm_api_url:document.getElementById('api_url').value.trim()||'https://api.deepseek.com',
+        llm_model:document.getElementById('model').value.trim()||'deepseek-chat',
+        max_tokens:parseInt(document.getElementById('max_tokens').value)||100000,
+    };
+    try{
+        const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+        if(r.ok) toast('✅ 配置已保存','ok');
+        else{const e=await r.json();toast('❌ '+(e.detail||'保存失败'),'err');}
+    }catch(e){toast('❌ 网络错误','err');}
+}
+
+async function resetCfg(){
+    if(!confirm('恢复默认？')) return;
+    try{
+        await fetch(API,{method:'DELETE'});
+        await load();
+        toast('✅ 已恢复','ok');
+    }catch(e){}
+}
+
+async function testConn(){
+    const key=document.getElementById('api_key').value.trim();
+    const url=document.getElementById('api_url').value.trim()||'https://api.deepseek.com';
+    const model=document.getElementById('model').value.trim()||'deepseek-chat';
+    if(!key){toast('请先填写API Key','err');return;}
+    const el=document.getElementById('testResult');
+    el.textContent='⏳ 测试中...'; el.className='';
+    
+    let base=url.replace(/\/+$/,'');
+    if(!base.endsWith('/v1')) base+='/v1';
+    try{
+        const r=await fetch(base+'/chat/completions',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+            body:JSON.stringify({model:model,messages:[{role:'user',content:'hi'}],max_tokens:5})
+        });
+        if(r.ok){
+            el.textContent='✅ 连接成功！'; el.className='test-ok';
+            toast('✅ 连接成功','ok');
+        }else{
+            const e=await r.json().catch(()=>({}));
+            const msg=e.error?.message||e.detail||r.statusText;
+            el.textContent='❌ HTTP '+r.status+': '+msg.substring(0,60); el.className='test-fail';
+            toast('❌ '+msg.substring(0,80),'err');
+        }
+    }catch(e){
+        el.textContent='❌ 网络不通: '+e.message.substring(0,50); el.className='test-fail';
+        toast('❌ 无法连接','err');
+    }
+}
+
+function toast(msg,type){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.className='toast '+type+' show';
+    setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+load(); upEst();
+</script>
+</body>
+</html>

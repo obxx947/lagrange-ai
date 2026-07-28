@@ -1,0 +1,120 @@
+@startuml
+' ============================================================
+' 拉格朗日智能体 - 系统架构图 (PlantUML)
+' C4 Container级别架构
+' ============================================================
+
+title 拉格朗日智能体 - AI战术推演中心 系统架构
+
+' ---- 用户层 ----
+actor "游戏玩家" as User
+actor "管理员" as Admin
+
+' ---- 前端层 ----
+package "前端 (SPA)" as Frontend {
+  [static/index.html\n主应用页面] as MainApp
+  [serene/index.html\n品牌展示站] as BrandSite
+  [theme.css\n深空科幻主题] as ThemeCSS
+  [service_worker.js\nPWA离线支持] as ServiceWorker
+}
+
+' ---- 应用层 ----
+package "FastAPI 后端" as Backend {
+  [main.py\n应用入口] as MainEntry
+  package "API路由" {
+    [api_routes.py\n用户API] as UserAPI
+    [admin_routes.py\n管理API] as AdminAPI
+  }
+  package "业务服务" {
+    [chat_service.py\nAI对话服务] as ChatSvc
+    [battle_engine.py\n战斗模拟引擎] as BattleEngine
+    [fleet_optimizer.py\n舰队优化推荐] as FleetOpt
+    [billing_service.py\nToken计费服务] as Billing
+    [simulator_service.py\n舰队存档服务] as SimSvc
+  }
+  package "RAG检索" {
+    [rag_service.py\nTF-IDF+FAISS] as RAG
+    [game_knowledge.py\n游戏知识库] as GameKB
+    [doc_loader.py\n文档同步] as DocLoader
+  }
+  package "基础设施" {
+    [auth.py\nJWT认证] as Auth
+    [middleware.py\n限流中间件] as Middleware
+    [scheduler.py\n定时任务] as Scheduler
+    [config.py\n配置管理] as Config
+  }
+}
+
+' ---- 数据层 ----
+package "数据存储" as DataLayer {
+  database "SQLite\n(lagrange.db)" as DB {
+    frame "5张表" {
+      [users\n用户表]
+      [session_login\n会话表]
+      [chat_record\n聊天记录]
+      [recharge_log\n充值日志]
+      [simulator_save\n舰队存档]
+    }
+  }
+  folder "向量索引\n(chroma_db/)" as VectorDB {
+    [faiss_index.bin\nFAISS索引]
+    [tfidf_vectorizer.pkl\nTF-IDF向量器]
+  }
+  folder "知识库文档\n(lagrange_docs/)" as KnowledgeBase {
+    [战斗机制.txt]
+    [ship_database.json\n169艘舰船]
+  }
+}
+
+' ---- 外部服务 ----
+cloud "DeepSeek API\n(deepseek-chat)" as DeepSeekAPI
+cloud "质料文件夹\n(Desktop同步)" as DesktopMat
+
+' ---- 新增高性能模块 ----
+package "高性能加速层" as HighPerf {
+  [battle_engine_rs/\nRust核心] as RustCore
+  [cpp_simcore/\nC/C++引擎] as CppCore
+  [battle_formal/\nHaskell/Agda/Idris2\n形式化验证] as FormalVerify
+}
+
+' ---- 关系 ----
+User --> MainApp : HTTPS访问
+User --> BrandSite : 浏览
+Admin --> MainApp : 管理操作
+
+MainApp --> UserAPI : API调用
+MainApp --> ThemeCSS : 样式
+MainApp --> ServiceWorker : PWA注册
+
+UserAPI --> Auth : JWT鉴权
+UserAPI --> Middleware : 限流
+UserAPI --> ChatSvc : 对话请求
+UserAPI --> BattleEngine : 模拟请求
+UserAPI --> FleetOpt : 推荐请求
+UserAPI --> SimSvc : 存档管理
+UserAPI --> Billing : Token扣费
+
+AdminAPI --> Billing : 充值管理
+AdminAPI --> DB : 审计查看
+
+ChatSvc --> RAG : 检索相关文档
+ChatSvc --> GameKB : 获取游戏知识
+ChatSvc --> DeepSeekAPI : LLM推理
+
+RAG --> VectorDB : 向量检索
+RAG --> KnowledgeBase : 文档分块
+DocLoader --> DesktopMat : 文档同步
+DocLoader --> KnowledgeBase : 更新
+
+BattleEngine --> RustCore : 高性能计算
+BattleEngine --> CppCore : 批量模拟
+BattleEngine --> FormalVerify : 公式验证
+
+Scheduler --> DB : 定时清理/备份
+Config --> DeepSeekAPI : API配置
+
+DB <-- ChatSvc : 记录对话
+DB <-- SimSvc : 存取存档
+DB <-- Billing : 记录充值
+
+@enduml

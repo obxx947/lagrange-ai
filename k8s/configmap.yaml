@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lagrange-config
+  namespace: lagrange
+  labels:
+    app: lagrange-agent
+    component: config
+    game: infinite-lagrange
+  annotations:
+    reloader.stakater.com/match: "true"
+data:
+  # ---- Server Configuration ----
+  APP_HOST: "0.0.0.0"
+  APP_PORT: "3000"
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+
+  # ---- DeepSeek AI Configuration ----
+  DEEPSEEK_BASE_URL: "https://api.deepseek.com"
+  DEEPSEEK_CHAT_MODEL: "deepseek-chat"
+  DEEPSEEK_MAX_TOKENS: "4096"
+  DEEPSEEK_TEMPERATURE: "0.7"
+  DEEPSEEK_TIMEOUT_SECONDS: "60"
+  DEEPSEEK_MAX_RETRIES: "3"
+
+  # ---- Path Configuration ----
+  DATABASE_PATH: "/app/data/lagrange.db"
+  DB_BACKUP_DIR: "/app/data/db_backup"
+  CHROMA_DB_PATH: "/app/data/chroma_db"
+  LAGRANGE_DOCS_PATH: "/app/lagrange_docs"
+  DESKTOP_MATERIALS_PATH: "/app/materials"
+  EXPORT_DIR: "/app/data/exports"
+  STATIC_DIR: "/app/static"
+
+  # ---- Performance Configuration ----
+  RATE_LIMIT_MAX: "10"
+  RATE_LIMIT_WINDOW_SECONDS: "3600"
+  CHUNK_SIZE: "500"
+  CHUNK_OVERLAP: "50"
+  RETRIEVAL_TOP_K: "5"
+  MAX_CONCURRENT_BATTLES: "100"
+  BATTLE_TIMEOUT_SECONDS: "300"
+
+  # ---- Caching Configuration ----
+  REDIS_HOST: "lagrange-redis-svc"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_CACHE_TTL_SECONDS: "3600"
+
+  # ---- User Configuration ----
+  DEFAULT_NEW_USER_TOKENS: "10000"
+  MAX_TOKENS_PER_USER: "1000000"
+  TOKEN_COST_PER_CHAT: "1"
+  TOKEN_COST_PER_BATTLE_SIM: "5"
+
+  # ---- Session Configuration ----
+  JWT_EXPIRE_DAYS: "7"
+  SESSION_EXPIRE_DAYS: "7"
+  CHAT_RECORD_EXPIRE_DAYS: "14"
+
+  # ---- Scheduled Tasks ----
+  CLEANUP_INTERVAL_HOURS: "1"
+  BACKUP_SCHEDULE: "0 3 * * *"
+  INDEX_REBUILD_SCHEDULE: "0 4 * * 0"
+
+  # ---- Monitoring ----
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "9090"
+  TRACING_ENABLED: "true"
+  TRACING_SAMPLE_RATE: "0.1"
+  JAEGER_AGENT_HOST: "lagrange-jaeger-svc"
+  JAEGER_AGENT_PORT: "6831"
+
+  # ---- Fleet Battle Engine ----
+  BATTLE_ENGINE_MODE: "hybrid"
+  BATTLE_ENGINE_WORKERS: "4"
+  BATTLE_ENGINE_MAX_ITERATIONS: "10000"
+  BATTLE_ENGINE_PRECISION: "0.001"
+
+  # ---- Ship Database ----
+  SHIP_DATABASE_VERSION: "2.0"
+  SHIP_DATABASE_TOTAL_COUNT: "169"
+  SHIP_DATABASE_UPDATE_SCHEDULE: "0 2 * * 1"

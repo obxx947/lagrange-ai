@@ -1,4 +1,26 @@
 {
+  "name": "lagrange-tactical-ai",
+  "version": "2.0.0",
+  "private": true,
+  "description": "无尽的拉格朗日 AI 战术推演中心 — 前端构建与工具链",
+  "scripts": {
+    "start": "python main.py",
+    "dev": "python main.py",
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
+    "build:analyze": "webpack --mode production --env analyze",
+    "ships:parse": "node parse_ships.js",
+    "ships:export": "python export_ships.py",
+    "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "lint:style": "stylelint 'src/**/*.{css,scss}' --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx,css,scss,json}'",
+    "test": "python -m pytest tests/ -v",
+    "clean": "rimraf dist/ static/dist/"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  },
   "dependencies": {
     "adm-zip": "^0.6.0"
   },

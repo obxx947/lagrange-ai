@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Log - Lagrange Tactical Viewer</title>
+    <style>
+        :root {
+            --bg: #0a0e1a;
+            --card: #111827;
+            --border: #1e3a8a;
+            --text: #d0d8f0;
+            --accent: #60a5fa;
+            --severity-critical: #ef4444;
+            --severity-high: #f97316;
+            --severity-medium: #eab308;
+            --severity-low: #22c55e;
+            --severity-info: #60a5fa;
+            --severity-debug: #64748b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            font-family: 'Consolas', 'Courier New', 'Microsoft YaHei', monospace;
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .log-header {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #111827, #1e293b, #111827);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .log-header h1 {
+            color: var(--accent);
+            font-size: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .log-header .meta {
+            font-size: 11px;
+            color: #93c5fd;
+            margin-top: 6px;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 12px 15px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .filter-bar label {
+            font-size: 11px;
+            color: #93c5fd;
+            margin-right: 4px;
+        }
+        .filter-bar select, .filter-bar input {
+            background: #0f172a;
+            color: var(--text);
+            border: 1px solid #1e293b;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .filter-bar .btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            margin-bottom: 15px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #1e293b;
+        }
+
+        .log-entry {
+            position: relative;
+            margin-bottom: 8px;
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .log-entry:hover {
+            background: #1a2236;
+        }
+        .log-entry::before {
+            content: '';
+            position: absolute;
+            left: -30px;
+            top: 14px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #1e293b;
+            background: var(--bg);
+        }
+
+        /* Severity Colors */
+        .log-entry.critical { border-left: 4px solid var(--severity-critical); }
+        .log-entry.critical::before { background: var(--severity-critical); border-color: var(--severity-critical); }
+
+        .log-entry.high { border-left: 4px solid var(--severity-high); }
+        .log-entry.high::before { background: var(--severity-high); border-color: var(--severity-high); }
+
+        .log-entry.medium { border-left: 4px solid var(--severity-medium); }
+        .log-entry.medium::before { background: var(--severity-medium); border-color: var(--severity-medium); }
+
+        .log-entry.low { border-left: 4px solid var(--severity-low); }
+        .log-entry.low::before { background: var(--severity-low); border-color: var(--severity-low); }
+
+        .log-entry.info { border-left: 4px solid var(--severity-info); }
+        .log-entry.info::before { background: var(--severity-info); border-color: var(--severity-info); }
+
+        .log-entry.debug { border-left: 4px solid var(--severity-debug); }
+        .log-entry.debug::before { background: var(--severity-debug); border-color: var(--severity-debug); }
+
+        .log-entry .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .log-entry .timestamp {
+            font-size: 10px;
+            color: #64748b;
+        }
+        .log-entry .severity-badge {
+            font-size: 9px;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .severity-badge.critical { background: #7f1d1d; color: #fca5a5; }
+        .severity-badge.high { background: #7c2d12; color: #fdba74; }
+        .severity-badge.medium { background: #713f12; color: #fde047; }
+        .severity-badge.low { background: #14532d; color: #86efac; }
+        .severity-badge.info { background: #1e3a5f; color: #93c5fd; }
+        .severity-badge.debug { background: #1e293b; color: #94a3b8; }
+
+        .log-entry .source {
+            font-size: 10px;
+            color: #64748b;
+        }
+        .log-entry .message {
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+        .log-entry .details {
+            font-size: 10px;
+            color: #475569;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        /* Stats summary */
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-chip {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 11px;
+            text-align: center;
+        }
+        .stat-chip .count { font-size: 18px; font-weight: bold; }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .pagination button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .pagination button:hover:not(.active) {
+            background: #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="log-header">
+        <h1>Battle Event Log</h1>
+        <div class="meta">
+            Battle ID: {{battleId}} |
+            Fleet {{fleetA.name}} vs Fleet {{fleetB.name}} |
+            Total Events: {{totalEvents}}
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-chip">
+            <div style="color: var(--severity-critical);">Critical</div>
+            <div class="count" style="color: var(--severity-critical);">{{stats.critical}}</div>
+        </div>
+        <div class="stat-chip">
+            <div style="color: var(--severity-high);">High</div>
+            <div class="count" style="color: var(--severity-high);">{{stats.high}}</div>
+        </div>
+        <div class="stat-chip">
+            <div style="color: var(--severity-medium);">Medium</div>
+            <div class="count" style="color: var(--severity-medium);">{{stats.medium}}</div>
+        </div>
+        <div class="stat-chip">
+            <div style="color: var(--severity-low);">Low</div>
+            <div class="count" style="color: var(--severity-low);">{{stats.low}}</div>
+        </div>
+        <div class="stat-chip">
+            <div style="color: var(--severity-info);">Info</div>
+            <div class="count" style="color: var(--severity-info);">{{stats.info}}</div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <label>Severity:</label>
+        <select id="severityFilter" onchange="applyFilters()">
+            <option value="">All</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="info">Info</option>
+            <option value="debug">Debug</option>
+        </select>
+
+        <label>Source:</label>
+        <select id="sourceFilter" onchange="applyFilters()">
+            <option value="">All Sources</option>
+            {{#each sources}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+
+        <label>Ship:</label>
+        <select id="shipFilter" onchange="applyFilters()">
+            <option value="">All Ships</option>
+            {{#each ships}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+
+        <label>Round:</label>
+        <input type="number" id="roundFilter" placeholder="Round #" min="0" onchange="applyFilters()"
+               style="width: 80px;" />
+
+        <button class="btn" onclick="clearFilters()">Clear Filters</button>
+        <span id="filteredCount" style="font-size: 11px; color: #93c5fd; margin-left: auto;"></span>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search log entries..." oninput="applyFilters()" />
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline" id="logTimeline">
+        {{#if events.length}}
+            {{#each events}}
+            <div class="log-entry {{severity}}" data-severity="{{severity}}" data-source="{{source}}"
+                 data-ship="{{shipName}}" data-round="{{round}}">
+                <div class="entry-header">
+                    <span class="timestamp">[{{formatTimestamp timestamp}}] Round {{round}}</span>
+                    <span class="severity-badge {{severity}}">{{severity}}</span>
+                </div>
+                <div class="source">{{source}} {{#if shipName}}&raquo; {{shipName}}{{/if}}</div>
+                <div class="message">{{{message}}}</div>
+                {{#if details}}
+                <div class="details">{{details}}</div>
+                {{/if}}
+            </div>
+            {{/each}}
+        {{else}}
+            <div class="no-results">No log entries match the current filters.</div>
+        {{/if}}
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination">
+        {{#each pages}}
+        <button class="{{#if active}}active{{/if}}" onclick="goToPage({{page}})">{{page}}</button>
+        {{/each}}
+    </div>
+
+    <script>
+        // Handlebars helpers registered in JS
+        Handlebars.registerHelper('formatTimestamp', function(ts) {
+            const d = new Date(ts * 1000);
+            return d.toISOString().substr(11, 12);
+        });
+
+        function applyFilters() {
+            const severity = document.getElementById('severityFilter').value;
+            const source   = document.getElementById('sourceFilter').value;
+            const ship     = document.getElementById('shipFilter').value;
+            const round    = document.getElementById('roundFilter').value;
+            const search   = (document.getElementById('searchInput').value || '').toLowerCase();
+
+            const entries = document.querySelectorAll('.log-entry');
+            let visible = 0;
+
+            entries.forEach(entry => {
+                let show = true;
+
+                if (severity && entry.dataset.severity !== severity) show = false;
+                if (source && entry.dataset.source !== source) show = false;
+                if (ship && entry.dataset.ship !== ship) show = false;
+                if (round && entry.dataset.round !== round) show = false;
+                if (search) {
+                    const text = (entry.textContent || '').toLowerCase();
+                    if (text.indexOf(search) === -1) show = false;
+                }
+
+                entry.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            document.getElementById('filteredCount').textContent =
+                'Showing ' + visible + ' of ' + entries.length + ' entries';
+        }
+
+        function clearFilters() {
+            document.getElementById('severityFilter').value = '';
+            document.getElementById('sourceFilter').value = '';
+            document.getElementById('shipFilter').value = '';
+            document.getElementById('roundFilter').value = '';
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        }
+
+        function goToPage(page) {
+            window.location.href = '/battle/{{battleId}}/log?page=' + page;
+        }
+
+        // Initial count
+        document.addEventListener('DOMContentLoaded', function() {
+            const total = document.querySelectorAll('.log-entry').length;
+            document.getElementById('filteredCount').textContent = 'Showing ' + total + ' of ' + total + ' entries';
+        });
+    </script>
+</body>
+</html>
