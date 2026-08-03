@@ -132,9 +132,11 @@ def build_vector_index() -> dict:
             if not content or len(content.strip()) < 10:
                 print(f"[RAG] 跳过空文件或内容过短：{file_path.name}")
                 continue
-            chunks = split_text_into_chunks(content, file_path.name)
+            # 使用相对路径作为来源名（子文件夹显示完整路径）
+            rel_path = file_path.relative_to(config.LAGRANGE_DOCS_PATH).as_posix()
+            chunks = split_text_into_chunks(content, rel_path)
             all_chunks.extend(chunks)
-            print(f"[RAG] ✓ {file_path.name} → {len(chunks)} 个文本块")
+            print(f"[RAG] ✓ {rel_path} → {len(chunks)} 个文本块")
         except Exception as e:
             print(f"[RAG] ✗ 处理失败：{file_path.name} - {e}")
     

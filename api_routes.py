@@ -621,3 +621,25 @@ async def api_reset_config():
     """重置本地AI配置"""
     from user_config import reset_local_config
     return reset_local_config()
+
+
+@router.post("/config/model/switch")
+async def api_switch_model(data: dict):
+    """切换当前使用的模型"""
+    from user_config import get_local_config, save_local_config, get_effective_llm_config
+    model_id = data.get("model_id", "")
+    cfg = get_local_config()
+    models = cfg.get("models") or []
+    if not models:
+        return {"error": "未配置多模型"}
+    target = next((m for m in models if m.get("id") == model_id), None)
+    if not target:
+        return {"error": f"未找到模型: {model_id}"}
+    cfg["active_model_id"] = model_id
+    save_local_config(cfg)
+    active = get_effective_llm_config()
+    return {
+        "success": True,
+        "switched_to": target.get("name") or target.get("model"),
+        "active_model": active.get("model_name") or active.get("model"),
+    }

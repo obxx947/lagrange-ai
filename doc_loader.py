@@ -164,7 +164,7 @@ def get_vectorizable_files() -> List[Path]:
         return []
     
     vector_files = []
-    for item in docs_path.iterdir():
+    for item in docs_path.rglob("*"):
         if item.is_file() and is_vectorizable(item):
             vector_files.append(item)
     

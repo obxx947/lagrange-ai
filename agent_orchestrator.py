@@ -36,9 +36,18 @@ SYSTEM_PROMPT = """你是《无尽的拉格朗日》专业AI战术顾问。你�
 
 【舰队配置强制规则】
 - 用户询问舰队配置/配队方案时，必须调用 battle_simulate 工具
+- 【先查实例】只要问题与配队/舰队配置有关，不管怎么样，必须先去"实例.txt"（知识库文件）里查看实战配置范例，参考其中的配队思路和人口结构
 - 在多环境（护航战、轰炸战、正面对抗）下测试配置
 - 完整展示各环境实测数据给用户
 - 自主检验方案是否满足用户需求，不满足则迭代修改
+- 【输出要求】如果用户的问题与配队/舰队配置有关，请在回答的最后完整复述一遍舰队配置方案（含舰船名、数量、站位、模块）
+
+【人口计算规则】
+- 配队时必须检索"舰船人口.txt"（知识库文件），找到方案中每一艘舰船的人口占用值，按那里的数据累加计算舰队总人口
+- 如果在"舰船人口.txt"中找不到某艘舰船，必须去"黑话.txt"（知识库文件）查找该舰船的对应信息
+- "xxx+x"这种说法：前面的数字是这个舰队的总人口，后面是增援人口，这里说的是舰船数量
+- 放在增援编队（reinforcement）里的舰船不占用总人口，放什么船都行
+- 惯例：一般把人口占用最高的舰船放在增援编队里
 
 【回答风格】
 - 对标知识库内"真人讲解范例"的叙事风格：口语化、分点论证、同类对比
@@ -81,18 +90,83 @@ async def agent_chat_stream(
         yield _sse("error", "请先在设置页面配置大模型API Key（右上角⚙️）")
         return
 
-    # 步骤1：RAG预检索（注入初始上下文）
-    yield _sse("status", "🔍 正在检索知识库...")
-    try:
-        docs = search_similar_documents(user_message, top_k=5)
-        rag_context = format_rag_context(docs) if docs else ""
-    except Exception:
-        rag_context = ""
+    # ============ 步骤1：启动子代理并行检索 ============
+    yield _sse("sub_agent", "🚀 启动子代理集群...", {"agents": []})
+    from agent_sub_agents import SUB_AGENTS, run_sub_agent
+    from agent_cache import cached_search, rag_cache, web_search, get_tavily_key
 
-    # 步骤2：构建消息（清理所有reasoning_content）
+    sub_results = []
+    all_rag_docs = []
+    for agent in SUB_AGENTS:
+        yield _sse("sub_agent", f"{agent['icon']} {agent['name']} 正在检索...", {"agent": agent["name"]})
+        try:
+            r = run_sub_agent(agent["name"], user_message)
+            sub_results.append(r)
+            for item in r.get("results", []):
+                all_rag_docs.append({
+                    "source": item.get("source", "未知"),
+                    "content": item.get("content", ""),
+                })
+            yield _sse("sub_agent", f"{agent['icon']} {agent['name']} 完成（找到 {r.get('result_count', 0)} 条资料）", {"agent": agent["name"], "count": r.get("result_count", 0)})
+        except Exception as e:
+            yield _sse("sub_agent", f"{agent['icon']} {agent['name']} 异常: {str(e)[:50]}", {"agent": agent["name"], "error": str(e)[:50]})
+
+    # 缓存命中率显示
+    cache_stats = rag_cache.hit_rate()
+    yield _sse("cache", f"📊 缓存命中率: {cache_stats['hit_rate']}% ({cache_stats['hits']}次命中/{cache_stats['total']}次查询)", cache_stats)
+
+    # ============ 步骤2：RAG检索（带缓存） ============
+    yield _sse("status", "🔍 正在检索知识库...")
+    docs, cache_hit = cached_search(user_message, top_k=5)
+    all_rag_docs.extend([{"source": d.get("source", "未知"), "content": d.get("content", "")} for d in docs])
+
+    # 去重
+    seen_sources = set()
+    unique_rag = []
+    for d in all_rag_docs:
+        if d["source"] not in seen_sources:
+            seen_sources.add(d["source"])
+            unique_rag.append(d)
+    all_rag_docs = unique_rag
+
+    rag_context = format_rag_context(docs) if docs else ""
+    # 补充子代理检索到的额外资料
+    sub_context_parts = []
+    for r in sub_results:
+        for item in r.get("results", []):
+            src = item.get("source", "未知")
+            sub_context_parts.append(f"【子代理资料：{src}】\n{item.get('content', '')[:600]}")
+    if sub_context_parts:
+        rag_context += "\n\n" + "\n\n".join(sub_context_parts[:10])
+
+    # ============ 步骤3：联网搜索（任何情况都执行，无Key自动降级DuckDuckGo） ============
+    web_results = []
+    yield _sse("web_search", "🌐 正在联网搜索...")
+    try:
+        tavily_key = get_tavily_key()
+        web = web_search(user_message, tavily_key)
+        if web.get("results"):
+            web_results = web["results"]
+            engine = web.get("engine", "unknown")
+            yield _sse("web_search", f"🌐 联网搜索完成（{engine} · {len(web_results)} 条结果）", {"count": len(web_results), "engine": engine})
+        elif web.get("error"):
+            yield _sse("web_search", f"🌐 联网搜索失败: {web['error'][:50]}")
+        else:
+            yield _sse("web_search", "🌐 联网搜索无结果")
+    except Exception as e:
+        yield _sse("web_search", f"🌐 联网搜索异常: {str(e)[:50]}")
+
+    # 步骤4：构建消息（清理所有reasoning_content）
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     if rag_context:
-        messages.append({"role": "system", "content": f"【本次检索到的知识库资料】\n{rag_context}"})
+        messages.append({"role": "system", "content": f"【本次检索到的知识库资料（含子代理汇总）】\n{rag_context[:8000]}"})
+
+    if web_results:
+        web_text = "\n".join([
+            f"- {r.get('title', '')}: {r.get('content', '')[:300]} ({r.get('url', '')})"
+            for r in web_results[:5]
+        ])
+        messages.append({"role": "system", "content": f"【互联网检索结果】\n{web_text}"})
 
     # 加入历史（只保留role和content）
     if history:
@@ -108,7 +182,7 @@ async def agent_chat_stream(
 
     messages.append({"role": "user", "content": user_message})
 
-    # 步骤3：Agent 循环（最多5轮推理+工具调用）
+    # 步骤5：Agent 循环（最多50轮推理+工具调用）
     source_docs = []
     max_iterations = 50
     iteration = 0
@@ -148,6 +222,9 @@ async def agent_chat_stream(
                 msg = choice.get("message", {})
                 # 保留reasoning_content（thinking模型需要原样带回）
                 reasoning = msg.get("reasoning_content", None)
+                # 推送给前端显示（AI自我思考内容）
+                if reasoning:
+                    yield _sse("thinking", reasoning[:2000], {"truncated": len(reasoning) > 2000})
 
                 # 检查是否需要调用工具
                 if msg.get("tool_calls"):
@@ -195,12 +272,15 @@ async def agent_chat_stream(
                 # 无工具调用 → 得到最终回答
                 answer = msg.get("content", "")
 
-                # 步骤4：质检
-                yield _sse("status", "🔬 正在质检...")
+                # 步骤4：质检（质检Agent也会读取子代理汇总的资料）
+                yield _sse("status", "🔬 正在质检（查阅资料核验）...")
+                qc_sources = [{"source": d["source"], "content": d["content"]} for d in all_rag_docs[:10]]
+                if web_results:
+                    qc_sources.append({"source": "互联网", "content": web_results[0].get("content", "")[:300]})
                 qc_result = await quality_check(
                     user_query=user_message,
                     answer=answer,
-                    sources=docs if docs else None,
+                    sources=qc_sources if qc_sources else None,
                     api_key=api_key,
                     api_url=api_url,
                     model=model
@@ -211,7 +291,7 @@ async def agent_chat_stream(
                     yield _sse("answer", answer, {
                         "sources": [
                             {"file_name": d.get("source", "未知"), "snippet": d.get("content", "")[:200]}
-                            for d in (docs or [])
+                            for d in (all_rag_docs or [])[:10]
                         ],
                         "iterations": iteration,
                         "qc_feedback": qc_result.get("feedback", ""),

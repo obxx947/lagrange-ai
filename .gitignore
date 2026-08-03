@@ -71,5 +71,9 @@ Desktop.ini
 !exports/.gitkeep
 !chroma_db/.gitkeep
 !db_backup/.gitkeep
-".github/"  
-".npm-cache/"  
+.github/  
+.npm-cache/  
+
+# 本地配置（含API Key，禁止上传）
+local_config.json
+.npm-cache/

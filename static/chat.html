@@ -42,15 +42,30 @@
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         .msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2d6ad4);color:#fff;border-bottom-right-radius:3px}
         .msg.assistant{align-self:flex-start;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-bottom-left-radius:3px}
+        .msg.system{align-self:center;background:rgba(74,158,255,0.06);border:1px solid rgba(74,158,255,0.15);color:var(--cyan);font-size:0.68rem;padding:5px 14px;border-radius:16px;max-width:92%}
         .msg .src{font-size:0.6rem;color:var(--cyan);margin-top:6px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.06)}
         .msg pre{background:rgba(0,0,0,0.3);padding:7px;border-radius:5px;font-size:0.65rem;overflow-x:auto;margin:4px 0;white-space:pre-wrap}
 
         /* Status lines - like ZCode */
-        .status-msg{display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:0.7rem;color:var(--t3);animation:fadeIn 0.2s}
+        /* Status lines */
+        .status-msg{display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:0.7rem;color:var(--t3);animation:fadeIn 0.2s;cursor:pointer}
+        .status-msg:hover{color:var(--t2)}
         .status-msg.working{color:var(--gold)}
         .status-msg.done{color:var(--green)}
         .status-msg.error{color:var(--red)}
         .status-msg .icon{font-size:0.85rem}
+
+        /* AI思考内容（淡色显示） */
+        .thinking-box{align-self:flex-start;max-width:85%;width:100%;margin:2px 0;border-left:2px solid rgba(74,158,255,0.25);padding:6px 12px;background:rgba(74,158,255,0.03);border-radius:4px}
+        .thinking-box .th-head{font-size:0.62rem;color:rgba(139,163,199,0.6);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
+        .thinking-box .th-head:hover{color:rgba(139,163,199,0.9)}
+        .thinking-box .th-body{font-size:0.68rem;color:rgba(139,163,199,0.45);line-height:1.6;padding-top:4px;white-space:pre-wrap;word-break:break-word}
+        .thinking-box .th-body.hidden{display:none}
+        .thinking-box.auto-collapsed .th-body{display:none}
+        /* 状态/工具/联网搜索框（与思考同款样式，金色标题） */
+        .thinking-box.tb-status{border-left-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.02)}
+        .thinking-box.tb-status .th-head{color:rgba(255,215,0,0.7)}
+        .thinking-box.tb-status .th-body{color:rgba(200,180,120,0.6)}
 
         .input-area{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--bg2)}
         .input-area textarea{flex:1;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;color:var(--t1);padding:10px 12px;font-size:0.8rem;resize:none;outline:none;max-height:120px;font-family:inherit;line-height:1.4}
@@ -62,6 +77,25 @@
         .ctx-bar{margin:0 16px;height:2px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden}
         .ctx-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));transition:width 0.5s;border-radius:1px}
         .ctx-text{font-size:0.58rem;color:var(--t3);text-align:center;padding:2px 0 6px}
+
+        /* 底部控制栏：模型切换 + 缓存 + 上下文 */
+        .ctrl-bar{display:flex;align-items:center;gap:10px;padding:4px 16px 2px;flex-wrap:wrap;position:relative}
+        .model-picker{position:relative;display:inline-block}
+        .mp-btn{background:rgba(74,158,255,0.1);border:1px solid rgba(74,158,255,0.3);color:var(--t1);font-size:0.68rem;padding:4px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+        .mp-btn:hover{background:rgba(74,158,255,0.2)}
+        .mp-menu{display:none;position:absolute;bottom:calc(100% + 6px);left:0;min-width:200px;max-width:280px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.6);z-index:999;overflow:hidden}
+        .mp-menu.open{display:block}
+        .mp-menu .mp-title{font-size:0.6rem;color:var(--t3);padding:8px 12px 4px;letter-spacing:1px}
+        .mp-item{display:block;width:100%;text-align:left;padding:8px 12px;font-size:0.7rem;color:var(--t2);cursor:pointer;background:none;border:none;border-top:1px solid rgba(255,255,255,0.04)}
+        .mp-item:hover{background:rgba(74,158,255,0.1);color:var(--t1)}
+        .mp-item.active{color:var(--cyan);font-weight:600;background:rgba(74,158,255,0.06)}
+        .mp-item .mp-sub{display:block;font-size:0.58rem;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .mp-item:hover .mp-sub{color:var(--t2)}
+        .ctrl-bar .info-chip{font-size:0.62rem;color:var(--t3);padding:3px 8px;border:1px solid var(--border);border-radius:10px;white-space:nowrap}
+        .ctrl-bar .info-chip b{color:var(--gold)}
+        .ctrl-bar .info-chip .rate-ok{color:var(--green)}
+        .ctrl-bar .info-chip .rate-mid{color:var(--gold)}
+        .ctrl-bar .info-chip .rate-low{color:var(--red)}
 
         .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);gap:6px}
         .empty .icon{font-size:2.5rem;opacity:0.25}
@@ -89,6 +123,14 @@
 
     <div class="ctx-bar"><div class="ctx-fill" id="ctxFill" style="width:0%"></div></div>
     <div class="ctx-text" id="ctxText">上下文: 0 / 100,000 tokens (0%)</div>
+    <div class="ctrl-bar">
+        <div class="model-picker" id="modelPicker">
+            <button class="mp-btn" id="mpBtn" onclick="toggleModelMenu()">默认模型 ▾</button>
+            <div class="mp-menu" id="modelMenu"></div>
+        </div>
+        <span class="info-chip" id="cacheChip" title="缓存命中率">📊 缓存: --%</span>
+        <span class="info-chip" id="ctxChip" title="上下文容量">📈 上下文: 0 / 100K</span>
+    </div>
 
     <div class="main">
         <div class="sidebar">
@@ -118,12 +160,97 @@ let isStreaming = false;
 let tokenUsed = 0;
 const MAX_TOKENS = 100000;
 
+// ======== 模型管理 ========
+let currentModelName = '';
+let allModels = [];
+
+function toggleModelMenu(){
+    const menu=document.getElementById('modelMenu');
+    menu.classList.toggle('open');
+}
+
+async function loadModels(){
+    try{
+        const r=await fetch('/api/config');
+        if(!r.ok) return;
+        const c=await r.json();
+        const models=c.models||[];
+        allModels=models;
+        const btn=document.getElementById('mpBtn');
+        if(!models.length){
+            btn.textContent=(c.llm_model||'deepseek-chat')+' ▾';
+            currentModelName=c.llm_model||'deepseek-chat';
+            document.getElementById('modelMenu').innerHTML='<div class="mp-title">未配置多模型，可去设置页添加</div>';
+            return;
+        }
+        const activeId=c.active_model_id||models[0].id||'';
+        const active=models.find(m=>m.id===activeId)||models[0];
+        currentModelName=active.name||active.model;
+        btn.textContent=currentModelName+' ▾';
+        // 构建菜单：当前模型置顶高亮，其他模型列在下面
+        const others=models.filter(m=>m.id!==activeId);
+        let html=`<div class="mp-title">模型列表 (${models.length})</div>`;
+        html+=`<div class="mp-item active"><span>✓ ${currentModelName}</span><span class="mp-sub">${active.model||''} · ${active.api_url||''}</span></div>`;
+        others.forEach(m=>{
+            html+=`<div class="mp-item" onclick="switchModel('${m.id}')"><span>${m.name||m.model}</span><span class="mp-sub">${m.model||''} · ${m.api_url||''}</span></div>`;
+        });
+        document.getElementById('modelMenu').innerHTML=html;
+    }catch(e){}
+}
+
+async function switchModel(newId){
+    if(!newId) return;
+    const oldName=currentModelName;
+    try{
+        const r=await fetch('/api/config/model/switch',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({model_id:newId})
+        });
+        if(r.ok){
+            const res=await r.json();
+            currentModelName=res.switched_to||newId;
+            document.getElementById('mpBtn').textContent=currentModelName+' ▾';
+            document.getElementById('modelMenu').classList.remove('open');
+            // 在对话中显示切换消息
+            renderMsg('system','⚡ 模型切换: '+(oldName||'默认')+' → '+(res.switched_to||currentModelName));
+            const conv=conversations[activeConv];
+            if(conv) conv.messages.push({role:'system',content:'⚡ 模型切换: '+(oldName||'默认')+' → '+(res.switched_to||currentModelName)});
+            save();
+            loadModels(); // 刷新列表高亮
+        }else{
+            const e=await r.json().catch(()=>({}));
+            addStatusLine('❌',e.error||'切换失败');
+        }
+    }catch(e){ addStatusLine('❌','切换失败: '+e.message); }
+}
+
+// 点击外部关闭模型菜单
+document.addEventListener('click',(e)=>{
+    const picker=document.getElementById('modelPicker');
+    if(picker && !picker.contains(e.target)){
+        const menu=document.getElementById('modelMenu');
+        if(menu) menu.classList.remove('open');
+    }
+});
+
+function updateCacheChip(rate){
+    const chip=document.getElementById('cacheChip');
+    chip.innerHTML=`📊 缓存: <b class="${rate>=60?'rate-ok':rate>=30?'rate-mid':'rate-low'}">${rate}%</b>`;
+}
+
+function updateCtxChip(used,max){
+    const chip=document.getElementById('ctxChip');
+    chip.innerHTML=`📈 上下文: ${Math.round(used/1000)}K / ${Math.round(max/1000)}K`;
+}
+
 // ======== Init ========
 function init(){
     try{ const s=localStorage.getItem('lagrange_conversations'); if(s) conversations=JSON.parse(s); }catch(e){}
     if(!Object.keys(conversations).length) newChat();
     else switchConv(Object.keys(conversations).pop());
     updateTokenBar();
+    loadModels();
 }
 
 function newChat(){
@@ -244,6 +371,18 @@ async function send(){
                     } else if(e==='status' && d.includes('质检')){
                         setStatus('busy','🔬 '+d);
                         addStatusLine('🔬',d);
+                    } else if(e==='sub_agent'){
+                        setStatus('busy','🤖 子代理运行中');
+                        addStatusLine('🤖',d);
+                    } else if(e==='web_search'){
+                        setStatus('busy','🌐 联网搜索');
+                        addStatusLine('🌐',d);
+                    } else if(e==='cache'){
+                        setStatus('idle','📊 缓存: '+d);
+                        addStatusLine('📊',d);
+                        if(meta && meta.hit_rate!==undefined) updateCacheChip(meta.hit_rate);
+                    } else if(e==='thinking'){
+                        addThinkingLine(d);
                     } else if(e==='tool_start'){
                         setStatus('busy','🔧 调用: '+meta.tool);
                         addStatusLine('🔧','调用工具: '+meta.tool);
@@ -257,6 +396,7 @@ async function send(){
                         fullAnswer=d;
                         if(meta) sources=meta.sources||[];
                         assistDiv.innerHTML=formatContent(d,sources);
+                        collapseAllThinking();
                     } else if(e==='error'){
                         addStatusLine('❌',d);
                         assistDiv.remove();
@@ -291,6 +431,7 @@ function finish(){
     isStreaming=false;
     document.getElementById('sendBtn').disabled=false;
     setStatus('idle','就绪');
+    collapseAllThinking();
     document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
     document.getElementById('chatInput').focus();
 }
@@ -302,13 +443,42 @@ function setStatus(state,text){
 }
 
 function addStatusLine(icon,text){
+    // 状态行（工具/联网/子代理等）：与AI思考同款折叠样式，完成后自动折叠
+    const msgs=document.getElementById('chatMsgs');
     const div=document.createElement('div');
-    div.className='status-msg working';
-    div.innerHTML=`<span class="icon">${icon}</span> ${text}`;
-    document.getElementById('chatMsgs').appendChild(div);
-    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
-    // Auto-remove after 8s
-    setTimeout(()=>{ if(div.parentNode) div.remove(); }, 8000);
+    div.className='thinking-box tb-status';
+    // 标题显示简短状态（图标+摘要），正文放完整内容
+    const short=text.length>30 ? text.substring(0,30)+'...' : text;
+    div.innerHTML=`<div class="th-head" onclick="this.parentElement.classList.toggle('auto-collapsed')">${icon} ${short} <span style="opacity:0.5">▾</span></div>
+        <div class="th-body">${text}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop=msgs.scrollHeight;
+    return div;
+}
+
+function collapseAllThinking(){
+    // AI回答完成后，自动折叠所有思考框和状态框
+    document.querySelectorAll('.thinking-box').forEach(b=>{
+        b.classList.add('auto-collapsed');
+        b.classList.add('closed');
+    });
+}
+
+function addThinkingLine(text){
+    // AI自我思考内容：淡色显示在对话流中，完成后自动折叠
+    const msgs=document.getElementById('chatMsgs');
+    let box=msgs.querySelector('.thinking-box.tb-thinking:not(.closed)');
+    if(!box || box.classList.contains('auto-collapsed')){
+        box=document.createElement('div');
+        box.className='thinking-box tb-thinking';
+        box.innerHTML=`<div class="th-head" onclick="this.parentElement.classList.toggle('auto-collapsed')">🧠 AI思考 <span style="opacity:0.5">▾ 点击展开/收起</span></div>
+            <div class="th-body"></div>`;
+        msgs.appendChild(box);
+    }
+    const tb=box.querySelector('.th-body');
+    tb.textContent+=text;
+    msgs.scrollTop=msgs.scrollHeight;
+    return box;
 }
 
 function formatContent(text,sources){
@@ -340,6 +510,7 @@ function updateTokenBar(){
     const pct=Math.min(100,(tokenUsed/MAX_TOKENS)*100);
     document.getElementById('ctxFill').style.width=pct+'%';
     document.getElementById('ctxText').textContent=`上下文: ${tokenUsed.toLocaleString()} / ${MAX_TOKENS.toLocaleString()} tokens (${Math.round(pct)}%)`;
+    updateCtxChip(tokenUsed, MAX_TOKENS);
 }
 
 // Auto-resize

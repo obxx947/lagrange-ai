@@ -44,6 +44,9 @@ input:focus,select:focus{border-color:var(--blue)}
 .nav{text-align:center;margin-top:16px}
 .nav a{color:var(--t3);font-size:0.7rem;text-decoration:none;margin:0 8px}
 .nav a:hover{color:var(--blue)}
+details.card summary{outline:none}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary:hover{color:var(--blue)}
 .test-ok{color:var(--green);font-size:0.7rem;margin-left:8px}
 .test-fail{color:var(--red);font-size:0.7rem;margin-left:8px}
 </style>
@@ -54,8 +57,27 @@ input:focus,select:focus{border-color:var(--blue)}
 <p class="sub">支持所有 OpenAI 兼容接口（DeepSeek / OpenAI / 硅基流动 / 本地模型等）</p>
 
 <div class="card">
-<div class="ct">🔑 API 连接</div>
+<div class="ct">🗂️ 多模型管理 <span style="font-size:0.65rem;color:var(--t3)">(添加多个API/模型，聊天时一键切换)</span></div>
+<div id="modelsList" style="margin-bottom:10px"></div>
+<div style="background:rgba(255,255,255,0.03);border:1px dashed var(--border);border-radius:8px;padding:10px;">
+    <label>显示名称 <span style="color:var(--t3);font-size:0.6rem;">(在聊天页显示的名字，如: GM l5)</span></label>
+    <input type="text" id="nm_name" placeholder="如: GM l5">
+    <label>API Key</label>
+    <input type="password" id="nm_key" placeholder="sk-...">
+    <label>API 地址</label>
+    <input type="text" id="nm_url" placeholder="https://api.deepseek.com">
+    <label>模型ID <span style="color:var(--t3);font-size:0.6rem;">(API提供商要求的模型名，如: deepseek-chat)</span></label>
+    <input type="text" id="nm_model" placeholder="deepseek-chat">
+    <button class="btn btn-p" onclick="addModel()" style="width:100%">➕ 添加此模型</button>
+</div>
+</div>
 
+<details class="card" style="cursor:pointer">
+<summary class="ct" style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+    <span>🔑 默认模型配置（未添加多模型时的兜底）</span>
+    <span style="font-size:0.65rem;color:var(--t3)">展开/收起 ▾</span>
+</summary>
+<div style="padding-top:10px">
 <label>API Key</label>
 <div class="pwd-wrap">
 <input type="password" id="api_key" placeholder="sk-...">
@@ -73,13 +95,14 @@ input:focus,select:focus{border-color:var(--blue)}
 ❌ <code style="color:var(--red)">https://api.deepseek.com/v1/chat/completions</code>
 </div>
 
-<label>模型名</label>
+<label>模型ID</label>
 <input type="text" id="model" placeholder="deepseek-chat">
 <div class="hint">常用: deepseek-chat · deepseek-reasoner · gpt-4o · gpt-4o-mini · 按你的API提供商文档填写</div>
 
 <button class="btn btn-g" onclick="testConn()" style="width:100%">🔍 测试连接</button>
 <span id="testResult"></span>
 </div>
+</details>
 
 <div class="card">
 <div class="ct">📊 上下文窗口</div>
@@ -130,6 +153,83 @@ async function load(){
         const mt=document.getElementById('max_tokens');
         mt.value=c.max_tokens||100000;
         mt.dispatchEvent(new Event('input'));
+        window._savedModels = c.models || [];
+        renderModels();
+    }catch(e){}
+}
+
+// ======== 多模型管理 ========
+function renderModels(){
+    const list=document.getElementById('modelsList');
+    const models=window._savedModels||[];
+    if(!models.length){
+        list.innerHTML='<div style="font-size:0.7rem;color:var(--t3);padding:6px 0;">暂无已保存的模型</div>';
+        return;
+    }
+    list.innerHTML=models.map((m,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:rgba(0,0,0,0.2);">
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.78rem;font-weight:600;color:var(--t1);">${m.name||m.model}</div>
+                <div style="font-size:0.62rem;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.model||''} · ${m.api_url||''}</div>
+            </div>
+            <button class="btn btn-s" style="padding:4px 10px;font-size:0.65rem;" onclick="testModel(${i})">🔍</button>
+            <button class="btn btn-s" style="padding:4px 10px;font-size:0.65rem;color:var(--red);border-color:var(--red);" onclick="delModel(${i})">✕</button>
+        </div>`).join('');
+}
+
+async function addModel(){
+    const name=document.getElementById('nm_name').value.trim();
+    const key=document.getElementById('nm_key').value.trim();
+    const url=document.getElementById('nm_url').value.trim()||'https://api.deepseek.com';
+    const model=document.getElementById('nm_model').value.trim();
+    if(!key||!model){toast('请填写API Key和模型名','err');return;}
+    const models=window._savedModels||[];
+    models.push({
+        id:'m'+Date.now(),
+        name:name||model,
+        api_key:key,
+        api_url:url,
+        model:model,
+        provider:'custom'
+    });
+    window._savedModels=models;
+    document.getElementById('nm_name').value='';
+    document.getElementById('nm_key').value='';
+    document.getElementById('nm_model').value='';
+    renderModels();
+    await saveModels();
+    toast('✅ 模型已添加','ok');
+}
+
+function delModel(i){
+    const models=window._savedModels||[];
+    models.splice(i,1);
+    window._savedModels=models;
+    renderModels();
+    saveModels();
+}
+
+async function testModel(i){
+    const m=(window._savedModels||[])[i];
+    if(!m)return;
+    toast('⏳ 测试 '+m.name+'...','ok');
+    let base=(m.api_url||'https://api.deepseek.com').replace(/\/+$/,'');
+    if(!base.endsWith('/v1')) base+='/v1';
+    try{
+        const r=await fetch(base+'/chat/completions',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+m.api_key},
+            body:JSON.stringify({model:m.model,messages:[{role:'user',content:'hi'}],max_tokens:5})
+        });
+        if(r.ok) toast('✅ '+m.name+' 连接成功','ok');
+        else{const e=await r.json().catch(()=>({}));toast('❌ '+(e.error?.message||r.status).toString().substring(0,60),'err');}
+    }catch(e){toast('❌ 网络不通','err');}
+}
+
+async function saveModels(){
+    try{
+        const cfg={models:window._savedModels||[]};
+        await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
     }catch(e){}
 }
 
@@ -140,6 +240,7 @@ async function saveCfg(){
         llm_api_url:document.getElementById('api_url').value.trim()||'https://api.deepseek.com',
         llm_model:document.getElementById('model').value.trim()||'deepseek-chat',
         max_tokens:parseInt(document.getElementById('max_tokens').value)||100000,
+        models:window._savedModels||[],
     };
     try{
         const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});

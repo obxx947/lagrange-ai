@@ -19,6 +19,9 @@ DEFAULT_CONFIG = {
     "llm_api_key": "",
     "llm_api_url": "https://api.deepseek.com",
     "llm_model": "deepseek-chat",
+    # 多模型列表（支持多个API/模型）
+    "models": [],                         # [{id, name, api_key, api_url, model, provider}]
+    "active_model_id": "",
     # Embedding 模型
     "embedding_provider": "openai",       # openai / deepseek / local
     "embedding_api_key": "",
@@ -165,10 +168,32 @@ def reset_local_config() -> dict:
 
 
 def get_effective_llm_config(user_id: int = 0) -> dict:
-    """获取实际可用的 LLM 配置（本地模式优先读取 local_config.json）"""
+    """
+    获取实际可用的 LLM 配置（多模型优先，否则回退默认/环境变量）。
+    返回：{api_key, api_url, model, provider, model_name}
+    """
     cfg = get_local_config()
     import config as sys_cfg
 
+    # 1. 优先使用 active 模型（多模型列表）
+    models = cfg.get("models") or []
+    active_id = cfg.get("active_model_id", "")
+    if models:
+        active = None
+        if active_id:
+            active = next((m for m in models if m.get("id") == active_id), None)
+        if not active:
+            active = models[0]
+        if active:
+            return {
+                "api_key": active.get("api_key") or "",
+                "api_url": (active.get("api_url") or "https://api.deepseek.com").rstrip("/"),
+                "model": active.get("model") or "deepseek-chat",
+                "provider": active.get("provider") or "custom",
+                "model_name": active.get("name") or active.get("model"),
+            }
+
+    # 2. 回退到单模型配置
     api_key = cfg.get("llm_api_key") or sys_cfg.DEEPSEEK_API_KEY or ""
     api_url = cfg.get("llm_api_url") or "https://api.deepseek.com"
     model = cfg.get("llm_model") or "deepseek-chat"
@@ -176,4 +201,4 @@ def get_effective_llm_config(user_id: int = 0) -> dict:
     if cfg.get("llm_provider") == "openai" and not cfg.get("llm_api_url"):
         api_url = "https://api.openai.com"
 
-    return {"api_key": api_key, "api_url": api_url, "model": model}
+    return {"api_key": api_key, "api_url": api_url, "model": model, "provider": cfg.get("llm_provider", "deepseek"), "model_name": model}
