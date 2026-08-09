@@ -57,6 +57,13 @@
         .msg.assistant blockquote{border-left:3px solid var(--gold);margin:6px 0;padding:2px 10px;color:var(--t3);background:rgba(227,179,65,0.05)}
         .md-code{background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;overflow-x:auto;font-size:0.72rem;white-space:pre-wrap;color:var(--t1)}
         .msg.assistant hr{border:none;border-top:1px dashed rgba(255,255,255,0.12);margin:8px 0}
+        /* 计划审批操作栏（核心强制总规则）——与 AI 提问卡片（.ask-card）同款样式 */
+        .plan-card{align-self:flex-start;max-width:85%;width:100%;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.25);border-left:2px solid var(--gold);border-radius:10px;padding:12px 14px;margin:4px 0;animation:fadeIn 0.25s}
+        .plan-card .plan-title{font-size:0.82rem;font-weight:600;color:var(--t1);margin-bottom:8px;line-height:1.5}
+        .plan-card .plan-opt{font-size:0.75rem;color:var(--t2);margin:6px 0;line-height:1.6}
+        .plan-card .plan-approve{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#000;border:none;border-radius:7px;padding:6px 16px;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+        .plan-card .plan-approve:hover{box-shadow:0 0 12px rgba(74,158,255,0.4)}
+        .plan-card .plan-dash{color:rgba(255,255,255,0.2);letter-spacing:2px;text-align:center;margin:4px 0;font-size:0.7rem}
         /* AI提问卡片 */
         .ask-card{align-self:flex-start;max-width:85%;width:100%;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.25);border-left:2px solid var(--gold);border-radius:10px;padding:12px 14px;margin:4px 0;animation:fadeIn 0.25s}
         .ask-card .ask-q{font-size:0.82rem;font-weight:600;color:var(--t1);margin-bottom:8px;line-height:1.5}
@@ -490,6 +497,10 @@ async function streamChat(body, assistDiv, conv){
                     if(meta) sources=meta.sources||[];
                     assistDiv.innerHTML=formatContent(d,sources);
                     collapseAllThinking();
+                    // 计划审批操作栏：AI 输出【本次任务完整执行计划书】时弹出（批准/修改交互）
+                    if(String(d).includes('本次任务完整执行计划书')){
+                        renderPlanApprovalBar();
+                    }
                 } else if(e==='error'){
                     addStatusLine('❌',d);
                     if(assistDiv&&assistDiv.parentNode) assistDiv.remove();
@@ -784,6 +795,31 @@ function formatContent(text,sources){
         html+='<div class="src">📎 '+sources.map(s=>s.file_name||s.source||'?').filter((v,i,a)=>a.indexOf(v)===i).join(' · ')+'</div>';
     }
     return html;
+}
+
+// ======== 计划审批操作栏（核心强制总规则）：AI 出计划书后弹出，批准或输入修改意见 ========
+function renderPlanApprovalBar(){
+    if(document.querySelector('.plan-card')) return;  // 已有操作栏不重复
+    const card=document.createElement('div');
+    card.className='plan-card';
+    card.innerHTML=''+
+        '<div class="plan-dash">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>'+
+        '<div class="plan-title">🔐 需要权限 · 实施计划</div>'+
+        '<div class="plan-opt">1、<button class="plan-approve" onclick="approvePlan(this)">批准：退出计划模式并开始实施</button></div>'+
+        '<div class="plan-opt">2、直接输入文字发送：提出修改想法、调整方案、补充要求</div>'+
+        '<div class="plan-dash">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>';
+    document.getElementById('chatMsgs').appendChild(card);
+    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+}
+function approvePlan(btn){
+    const card=btn.closest('.plan-card');
+    if(card) card.remove();  // 批准后移除卡片（AI 若重制 V2 计划书会重新弹出新操作栏）
+    // 以用户身份发送"1"（纯文本环境：数字1=批准）
+    const ta=document.getElementById('chatInput');
+    if(ta){
+        ta.value='1';
+        if(typeof send==='function') send();
+    }
 }
 
 function renderMsg(role,text,meta,typing){
