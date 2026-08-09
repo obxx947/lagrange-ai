@@ -44,6 +44,37 @@
         .msg.assistant{align-self:flex-start;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-bottom-left-radius:3px}
         .msg.system{align-self:center;background:rgba(74,158,255,0.06);border:1px solid rgba(74,158,255,0.15);color:var(--cyan);font-size:0.68rem;padding:5px 14px;border-radius:16px;max-width:92%}
         .msg .src{font-size:0.6rem;color:var(--cyan);margin-top:6px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.06)}
+        /* Markdown 渲染样式 */
+        .msg.assistant h3,.msg.assistant h4{margin:10px 0 4px;color:var(--gold)}
+        .msg.assistant h2{margin:12px 0 5px;color:var(--t1);font-size:0.95rem}
+        .msg.assistant h3{font-size:0.85rem}
+        .msg.assistant h4{font-size:0.78rem}
+        .md-table{border-collapse:collapse;margin:6px 0;width:100%;font-size:0.72rem}
+        .md-table th,.md-table td{border:1px solid rgba(255,255,255,0.12);padding:4px 8px;text-align:left;color:var(--t1)}
+        .md-table th{background:rgba(227,179,65,0.08);color:var(--gold)}
+        .md-p{margin:4px 0;line-height:1.7}
+        .md-li{margin:2px 0 2px 8px;line-height:1.7}
+        .msg.assistant blockquote{border-left:3px solid var(--gold);margin:6px 0;padding:2px 10px;color:var(--t3);background:rgba(227,179,65,0.05)}
+        .md-code{background:#0d1117;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;overflow-x:auto;font-size:0.72rem;white-space:pre-wrap;color:var(--t1)}
+        .msg.assistant hr{border:none;border-top:1px dashed rgba(255,255,255,0.12);margin:8px 0}
+        /* AI提问卡片 */
+        .ask-card{align-self:flex-start;max-width:85%;width:100%;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.25);border-left:2px solid var(--gold);border-radius:10px;padding:12px 14px;margin:4px 0;animation:fadeIn 0.25s}
+        .ask-card .ask-q{font-size:0.82rem;font-weight:600;color:var(--t1);margin-bottom:8px;line-height:1.5}
+        .ask-card .ask-opts{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+        .ask-card .ask-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.75rem;color:var(--t2);transition:all 0.15s;background:rgba(0,0,0,0.15)}
+        .ask-card .ask-opt:hover{border-color:var(--blue);color:var(--t1)}
+        .ask-card .ask-opt.selected{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.08)}
+        .ask-card .ask-opt .ask-box{width:14px;height:14px;border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.6rem;flex-shrink:0}
+        .ask-card .ask-opt.selected .ask-box{background:var(--gold);color:#000;border-color:var(--gold)}
+        .ask-card textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;color:var(--t1);padding:8px 10px;font-size:0.75rem;resize:vertical;min-height:50px;outline:none;font-family:inherit;box-sizing:border-box}
+        .ask-card textarea:focus{border-color:var(--gold)}
+        .ask-card .ask-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
+        .ask-card .ask-actions button{padding:6px 16px;border-radius:7px;font-size:0.72rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s}
+        .ask-card .ask-submit{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#000}
+        .ask-card .ask-submit:hover{box-shadow:0 0 12px rgba(74,158,255,0.4)}
+        .ask-card .ask-skip{background:rgba(255,255,255,0.06);border:1px solid var(--border)!important;color:var(--t2)}
+        .ask-card .ask-free-hint{font-size:0.62rem;color:var(--t3);margin-top:6px}
+
         .msg pre{background:rgba(0,0,0,0.3);padding:7px;border-radius:5px;font-size:0.65rem;overflow-x:auto;margin:4px 0;white-space:pre-wrap}
 
         /* Status lines - like ZCode */
@@ -57,15 +88,41 @@
 
         /* AI思考内容（淡色显示） */
         .thinking-box{align-self:flex-start;max-width:85%;width:100%;margin:2px 0;border-left:2px solid rgba(74,158,255,0.25);padding:6px 12px;background:rgba(74,158,255,0.03);border-radius:4px}
-        .thinking-box .th-head{font-size:0.62rem;color:rgba(139,163,199,0.6);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none}
-        .thinking-box .th-head:hover{color:rgba(139,163,199,0.9)}
-        .thinking-box .th-body{font-size:0.68rem;color:rgba(139,163,199,0.45);line-height:1.6;padding-top:4px;white-space:pre-wrap;word-break:break-word}
+        .thinking-box .th-head{font-size:0.62rem;color:rgba(139,163,199,0.6);cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none;padding:4px 6px;margin:-4px -6px;border-radius:4px}
+        .thinking-box .th-head:hover{color:rgba(139,163,199,0.9);background:rgba(74,158,255,0.06)}
+        .thinking-box .th-head .hint{font-size:0.6rem;padding:1px 8px;border-radius:8px;border:1px solid currentColor;opacity:0.7}
+        .thinking-box .th-body{font-size:0.68rem;color:rgba(139,163,199,0.45);line-height:1.6;padding-top:4px;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow-y:auto}
+        .thinking-box .th-body::-webkit-scrollbar{width:3px}
+        .thinking-box .th-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
         .thinking-box .th-body.hidden{display:none}
         .thinking-box.auto-collapsed .th-body{display:none}
-        /* 状态/工具/联网搜索框（与思考同款样式，金色标题） */
-        .thinking-box.tb-status{border-left-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.02)}
-        .thinking-box.tb-status .th-head{color:rgba(255,215,0,0.7)}
-        .thinking-box.tb-status .th-body{color:rgba(200,180,120,0.6)}
+        /* 展开/收起指示：折叠时显示[展开]，展开时显示[收起] */
+        .thinking-box .th-head .hint.expand{display:none}
+        .thinking-box.auto-collapsed .th-head .hint.expand{display:inline-block}
+        .thinking-box.auto-collapsed .th-head .hint.collapse{display:none}
+        /* 折叠状态的标题更醒目（提示可点击） */
+        .thinking-box.auto-collapsed .th-head{color:rgba(139,163,199,0.85);background:rgba(74,158,255,0.05)}
+        /* 运行状态分组（所有状态+思考收在一起，整体可折叠） */
+        .run-group{align-self:stretch;width:100%;margin:2px 0;border-left:2px solid rgba(74,158,255,0.25);border-radius:4px;background:rgba(74,158,255,0.02);overflow:hidden}
+        .run-group .rg-head{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:0.7rem;color:var(--t2);cursor:pointer;user-select:none}
+        .run-group .rg-head:hover{background:rgba(255,255,255,0.04);color:var(--t1)}
+        .run-group .rg-head .caret{transition:transform 0.2s;font-size:0.6rem;color:var(--t3)}
+        .run-group .rg-head .hint{font-size:0.6rem;padding:1px 8px;border-radius:8px;border:1px solid currentColor;opacity:0.7;margin-left:auto}
+        .run-group .rg-head .hint.expand{display:none}
+        .run-group.auto-collapsed .rg-head .hint.expand{display:inline-block}
+        .run-group.auto-collapsed .rg-head .hint.collapse{display:none}
+        .run-group.auto-collapsed .rg-head .caret{transform:rotate(-90deg)}
+        .run-group .rg-body{padding:2px 8px 8px;max-height:320px;overflow-y:auto}
+        .run-group.auto-collapsed .rg-body{display:none}
+        /* 分组内部滚动条 */
+        .run-group .rg-body::-webkit-scrollbar{width:3px}
+        .run-group .rg-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+        /* 折叠时分组标题高亮 */
+        .run-group.auto-collapsed .rg-head{background:rgba(74,158,255,0.06);color:var(--t1)}
+        .run-group .rg-body .thinking-box{border-left:none;background:none;padding:4px 4px;margin:1px 0;max-width:100%}
+        .run-group .rg-body .thinking-box .th-head{padding:4px 6px;margin:0}
+        .run-group .rg-body .thinking-box .th-head:hover{background:rgba(255,255,255,0.04)}
+        .run-group .rg-summary{font-size:0.6rem;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:right;padding-right:8px}
 
         .input-area{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--bg2)}
         .input-area textarea{flex:1;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;color:var(--t1);padding:10px 12px;font-size:0.8rem;resize:none;outline:none;max-height:120px;font-family:inherit;line-height:1.4}
@@ -323,92 +380,32 @@ async function send(){
     save();
     renderConvList();
 
+    // 新建本轮运行状态分组（移除上一轮的，每轮独立）
+    const oldGroup=document.getElementById('runGroup');
+    if(oldGroup) oldGroup.remove();
+    ensureRunGroup();
+
     isStreaming=true;
     document.getElementById('sendBtn').disabled=true;
     setStatus('busy','思考中...');
 
     // Assistant placeholder
     const assistDiv=renderMsg('assistant','',null,true);
+    window._currentAssistEl=assistDiv; // 供思考框插入在其前
     let fullAnswer='';
     let sources=[];
 
     try{
-        const resp=await fetch('/api/agent/chat',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                message:msg,
-                history:conv.messages.slice(-30),
-                simulator_state:null
-            })
-        });
+        const result = await streamChat({
+            message: msg,
+            history: conv.messages.slice(-30),
+            simulator_state: null
+        }, assistDiv, conv);
 
-        if(!resp.ok){
-            assistDiv.remove();
-            renderMsg('error',`HTTP ${resp.status}: ${resp.status===400?'请先在设置页配置API Key':'服务异常'}`);
-            finish(); return;
-        }
+        fullAnswer = result.answer;
+        sources = result.sources;
 
-        const reader=resp.body.getReader();
-        const decoder=new TextDecoder();
-        let buffer='';
-
-        while(true){
-            const{ done,value}=await reader.read();
-            if(done) break;
-            buffer+=decoder.decode(value,{stream:true});
-            const lines=buffer.split('\n');
-            buffer=lines.pop()||'';
-            for(const line of lines){
-                if(!line.startsWith('data: ')) continue;
-                try{
-                    const evt=JSON.parse(line.slice(6));
-                    const{event:e,data:d,meta}=evt;
-
-                    if(e==='status' && d.includes('检索')){
-                        setStatus('busy','🔍 '+d);
-                        addStatusLine('🔍',d);
-                    } else if(e==='status' && d.includes('质检')){
-                        setStatus('busy','🔬 '+d);
-                        addStatusLine('🔬',d);
-                    } else if(e==='sub_agent'){
-                        setStatus('busy','🤖 子代理运行中');
-                        addStatusLine('🤖',d);
-                    } else if(e==='web_search'){
-                        setStatus('busy','🌐 联网搜索');
-                        addStatusLine('🌐',d);
-                    } else if(e==='cache'){
-                        setStatus('idle','📊 缓存: '+d);
-                        addStatusLine('📊',d);
-                        if(meta && meta.hit_rate!==undefined) updateCacheChip(meta.hit_rate);
-                    } else if(e==='thinking'){
-                        addThinkingLine(d);
-                    } else if(e==='tool_start'){
-                        setStatus('busy','🔧 调用: '+meta.tool);
-                        addStatusLine('🔧','调用工具: '+meta.tool);
-                    } else if(e==='tool_result'){
-                        addStatusLine('📋','工具结果已返回');
-                    } else if(e==='qc_pass'){
-                        addStatusLine('✅','质检通过');
-                    } else if(e==='qc_fail'){
-                        addStatusLine('⚠️','质检: '+d.substring(0,100));
-                    } else if(e==='answer'){
-                        fullAnswer=d;
-                        if(meta) sources=meta.sources||[];
-                        assistDiv.innerHTML=formatContent(d,sources);
-                        collapseAllThinking();
-                    } else if(e==='error'){
-                        addStatusLine('❌',d);
-                        assistDiv.remove();
-                    } else if(e==='done'){
-                        // complete
-                    }
-                }catch(ex){}
-            }
-            document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
-        }
-
-        if(fullAnswer){
+        if(fullAnswer != null){
             conv.messages.push({role:'assistant',content:fullAnswer,meta:{sources}});
             tokenUsed += fullAnswer.length;
         }else if(!document.getElementById('chatMsgs').contains(assistDiv)){
@@ -427,6 +424,193 @@ async function send(){
     finish();
 }
 
+// ======== SSE流式对话（含提问交互） ========
+async function streamChat(body, assistDiv, conv){
+    let fullAnswer='';
+    let sources=[];
+    const resp=await fetch('/api/agent/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+    });
+    if(!resp.ok){
+        if(assistDiv&&assistDiv.parentNode) assistDiv.remove();
+        renderMsg('error','HTTP '+resp.status+': '+(resp.status===400?'请先在设置页配置API Key':'服务异常'));
+        return {answer:'', sources:[]};
+    }
+    const reader=resp.body.getReader();
+    const decoder=new TextDecoder();
+    let buffer='';
+    while(true){
+        const{ done,value}=await reader.read();
+        if(done) break;
+        buffer+=decoder.decode(value,{stream:true});
+        const lines=buffer.split('\n');
+        buffer=lines.pop()||'';
+        for(const line of lines){
+            if(!line.startsWith('data: ')) continue;
+            try{
+                const evt=JSON.parse(line.slice(6));
+                const{event:e,data:d,meta}=evt;
+
+                if(e==='status' && d.includes('检索')){
+                    setStatus('busy','🔍 '+d);
+                    addStatusLine('🔍',d);
+                } else if(e==='status' && d.includes('质检')){
+                    setStatus('busy','🔬 '+d);
+                    addStatusLine('🔬',d);
+                } else if(e==='sub_agent'){
+                    setStatus('busy','🤖 子代理运行中');
+                    addStatusLine('🤖',d);
+                } else if(e==='web_search'){
+                    setStatus('busy','🌐 联网搜索');
+                    addStatusLine('🌐',d);
+                } else if(e==='cache'){
+                    setStatus('idle','📊 缓存: '+d);
+                    addStatusLine('📊',d);
+                    if(meta && meta.hit_rate!==undefined) updateCacheChip(meta.hit_rate);
+                } else if(e==='thinking'){
+                    addThinkingLine(d);
+                } else if(e==='tool_start'){
+                    setStatus('busy','🔧 调用: '+meta.tool);
+                    addStatusLine('🔧','调用工具: '+meta.tool);
+                } else if(e==='tool_result'){
+                    addStatusLine('📋','工具结果已返回');
+                } else if(e==='qc_pass'){
+                    addStatusLine('✅','质检通过');
+                } else if(e==='qc_fail'){
+                    addStatusLine('⚠️','质检: '+d.substring(0,100));
+                } else if(e==='ask_user'){
+                    // AI提问：渲染提问卡片（暂停当前流）
+                    renderAskCard(d, meta);
+                } else if(e==='awaiting_user'){
+                    addStatusLine('⏸️', d);
+                } else if(e==='answer'){
+                    fullAnswer=d;
+                    if(meta) sources=meta.sources||[];
+                    assistDiv.innerHTML=formatContent(d,sources);
+                    collapseAllThinking();
+                } else if(e==='error'){
+                    addStatusLine('❌',d);
+                    if(assistDiv&&assistDiv.parentNode) assistDiv.remove();
+                } else if(e==='done'){
+                    // complete
+                }
+            }catch(ex){}
+        }
+        document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+    }
+    return {answer:fullAnswer, sources};
+}
+
+// ======== AI提问卡片 ========
+function renderAskCard(question, meta){
+    const card=document.createElement('div');
+    card.className='ask-card';
+    card.id='askCard';
+    card.dataset.askId=meta.ask_id||'';
+    const opts=meta.options||[];
+    const qtype=meta.type||'free';
+    let optsHtml='';
+    if(opts.length){
+        optsHtml='<div class="ask-opts">'+opts.map((o,i)=>
+            '<div class="ask-opt" data-i="'+i+'" onclick="toggleAskOpt(this,&quot;'+qtype+'&quot;)">'+
+            '<span class="ask-box">'+(qtype==='single'?'':'✓')+'</span><span>'+o+'</span></div>').join('')+'</div>';
+    }
+    card.innerHTML='<div class="ask-q">🤔 '+question+'</div>'+
+        optsHtml+
+        '<textarea id="askFreeText" rows="2" placeholder="'+(opts.length?'也可以直接说说你的想法/补充条件...':'自由输入你的回答...')+'"></textarea>'+
+        '<div class="ask-free-hint">💡 可自由输入任何想法或补充信息</div>'+
+        '<div class="ask-actions">'+
+        '<button class="ask-skip" onclick="skipAsk()">跳过</button>'+
+        '<button class="ask-submit" onclick="submitAsk()">提交</button></div>';
+    document.getElementById('chatMsgs').appendChild(card);
+    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
+}
+
+function toggleAskOpt(el, qtype){
+    if(qtype==='single'){
+        document.querySelectorAll('#askCard .ask-opt').forEach(o=>o.classList.remove('selected'));
+        el.classList.add('selected');
+    }else{
+        el.classList.toggle('selected');
+    }
+}
+
+async function submitAsk(){
+    const card=document.getElementById('askCard');
+    if(!card) return;
+    const askId=card.dataset.askId;
+    const selections=[...card.querySelectorAll('.ask-opt.selected')].map(o=>o.textContent.trim());
+    const freeText=document.getElementById('askFreeText')?document.getElementById('askFreeText').value.trim():'';
+    if(!askId) return;
+    const btn=card.querySelector('.ask-submit');
+    if(btn) btn.disabled=true;
+    const parts=[];
+    if(selections.length) parts.push('选择: '+selections.join('、'));
+    if(freeText) parts.push('补充: '+freeText);
+    renderMsg('user', '📝 '+(parts.join(' | ')||'（跳过）'));
+    card.remove();
+    const conv=conversations[activeConv];
+    if(conv) conv.messages.push({role:'user',content:'📝 '+(parts.join(' | ')||'（跳过）')});
+    // 重置本轮运行状态分组（续答是新的一轮）
+    const oldGroup=document.getElementById('runGroup');
+    if(oldGroup) oldGroup.remove();
+    ensureRunGroup();
+    const assistDiv=renderMsg('assistant','',null,true);
+    window._currentAssistEl=assistDiv;
+    setStatus('busy','继续处理...');
+    try{
+        const result=await streamChat({
+            message:'',
+            history:(conversations[activeConv]||{messages:[]}).messages.slice(-30),
+            ask_answer:{ask_id:askId, selections, free_text:freeText}
+        }, assistDiv, null);
+        if(result.answer != null){
+            const c=conversations[activeConv];
+            if(c){ c.messages.push({role:'assistant',content:result.answer,meta:{sources:result.sources}}); tokenUsed+=result.answer.length; save(); renderConvList(); }
+        }else if(!document.getElementById('chatMsgs').contains(assistDiv)){
+            // removed by error
+        }else{
+            assistDiv.innerHTML='<span style="color:var(--t3)">（未收到回复）</span>';
+        }
+        updateTokenBar();
+    }catch(e){
+        if(document.getElementById('chatMsgs').contains(assistDiv)) assistDiv.remove();
+        renderMsg('error','网络错误: '+e.message);
+    }
+    finish();
+}
+
+function skipAsk(){
+    const card=document.getElementById('askCard');
+    if(!card) return;
+    const askId=card.dataset.askId;
+    card.remove();
+    renderMsg('user','📝 跳过');
+    const assistDiv=renderMsg('assistant','',null,true);
+    window._currentAssistEl=assistDiv;
+    setStatus('busy','继续处理...');
+    streamChat({
+        message:'',
+        history:(conversations[activeConv]||{messages:[]}).messages.slice(-30),
+        ask_answer:{ask_id:askId, selections:[], free_text:''}
+    }, assistDiv, null).then(result=>{
+        if(result.answer != null){
+            const c=conversations[activeConv];
+            if(c){ c.messages.push({role:'assistant',content:result.answer,meta:{sources:result.sources}}); tokenUsed+=result.answer.length; save(); renderConvList(); }
+        }else if(!document.getElementById('chatMsgs').contains(assistDiv)){
+            // removed
+        }else{
+            assistDiv.innerHTML='<span style="color:var(--t3)">（未收到回复）</span>';
+        }
+        updateTokenBar();
+    }).catch(e=>{
+        if(document.getElementById('chatMsgs').contains(assistDiv)) assistDiv.remove();
+        renderMsg('error','网络错误: '+e.message);
+    }).finally(finish);
+}
+
 function finish(){
     isStreaming=false;
     document.getElementById('sendBtn').disabled=false;
@@ -442,47 +626,160 @@ function setStatus(state,text){
     document.getElementById('topStatus').innerHTML=`<span class="dot${state==='busy'?' busy':''}"></span> ${text}`;
 }
 
+function ensureRunGroup(){
+    // 创建/显示运行状态分组（所有状态+思考收在一起）
+    let group=document.getElementById('runGroup');
+    if(!group){
+        const g=document.createElement('div');
+        g.className='run-group';
+        g.id='runGroup';
+        g.innerHTML=`<div class="rg-head" onclick="toggleRunGroup()">
+                <span class="caret">▼</span><span>🤖 运行状态</span>
+                <span class="rg-summary" id="rgSummary">运行中...</span>
+                <span class="hint expand">[展开]</span><span class="hint collapse">[收起]</span>
+            </div>
+            <div class="rg-body" id="runGroupBody"></div>`;
+        document.getElementById('chatMsgs').appendChild(g);
+        group=g;
+    }
+    group.style.display='';
+    group.classList.remove('auto-collapsed');
+    return group;
+}
+
+function toggleRunGroup(){
+    const g=document.getElementById('runGroup');
+    if(g) g.classList.toggle('auto-collapsed');
+}
+
 function addStatusLine(icon,text){
-    // 状态行（工具/联网/子代理等）：与AI思考同款折叠样式，完成后自动折叠
-    const msgs=document.getElementById('chatMsgs');
+    // 状态行（工具/联网/子代理等）：收进运行状态分组，完成后整体折叠
+    const group=ensureRunGroup();
+    const body=document.getElementById('runGroupBody');
     const div=document.createElement('div');
-    div.className='thinking-box tb-status';
-    // 标题显示简短状态（图标+摘要），正文放完整内容
+    div.className='thinking-box';
+    // 用 DOM API 安全构建（避免文本中引号/HTML破坏结构）
+    const head=document.createElement('div');
+    head.className='th-head';
+    head.onclick=()=>div.classList.toggle('auto-collapsed');
     const short=text.length>30 ? text.substring(0,30)+'...' : text;
-    div.innerHTML=`<div class="th-head" onclick="this.parentElement.classList.toggle('auto-collapsed')">${icon} ${short} <span style="opacity:0.5">▾</span></div>
-        <div class="th-body">${text}</div>`;
-    msgs.appendChild(div);
-    msgs.scrollTop=msgs.scrollHeight;
+    const title=document.createElement('span');
+    title.textContent=icon+' '+short;
+    const hintEx=document.createElement('span');
+    hintEx.className='hint expand'; hintEx.textContent='[展开]';
+    const hintCol=document.createElement('span');
+    hintCol.className='hint collapse'; hintCol.textContent='[收起]';
+    head.appendChild(title); head.appendChild(hintEx); head.appendChild(hintCol);
+    const body2=document.createElement('div');
+    body2.className='th-body';
+    body2.textContent=text;
+    div.appendChild(head); div.appendChild(body2);
+    body.appendChild(div);
+    // 更新分组摘要
+    const sum=document.getElementById('rgSummary');
+    if(sum) sum.textContent=text.length>40 ? text.substring(0,40)+'...' : text;
+    document.getElementById('chatMsgs').scrollTop=document.getElementById('chatMsgs').scrollHeight;
     return div;
 }
 
 function collapseAllThinking(){
-    // AI回答完成后，自动折叠所有思考框和状态框
-    document.querySelectorAll('.thinking-box').forEach(b=>{
-        b.classList.add('auto-collapsed');
-        b.classList.add('closed');
-    });
+    // AI回答完成后：折叠整个运行状态分组（内部行也折叠）
+    const group=document.getElementById('runGroup');
+    if(group){
+        group.classList.add('auto-collapsed');
+        group.querySelectorAll('.thinking-box').forEach(b=>{
+            b.classList.add('auto-collapsed');
+            b.classList.add('closed');
+        });
+        const sum=document.getElementById('rgSummary');
+        if(sum) sum.textContent='✅ 已完成';
+    }
 }
 
 function addThinkingLine(text){
-    // AI自我思考内容：淡色显示在对话流中，完成后自动折叠
+    // AI自我思考内容：独立成框，直接显示在对话流中
     const msgs=document.getElementById('chatMsgs');
-    let box=msgs.querySelector('.thinking-box.tb-thinking:not(.closed)');
-    if(!box || box.classList.contains('auto-collapsed')){
-        box=document.createElement('div');
-        box.className='thinking-box tb-thinking';
-        box.innerHTML=`<div class="th-head" onclick="this.parentElement.classList.toggle('auto-collapsed')">🧠 AI思考 <span style="opacity:0.5">▾ 点击展开/收起</span></div>
-            <div class="th-body"></div>`;
-        msgs.appendChild(box);
+    let tbBox=msgs.querySelector('.thinking-box[data-role="thinking"]');
+    if(!tbBox || tbBox.classList.contains('auto-collapsed')){
+        tbBox=document.createElement('div');
+        tbBox.className='thinking-box';
+        tbBox.setAttribute('data-role','thinking');
+        const head=document.createElement('div');
+        head.className='th-head';
+        head.onclick=()=>tbBox.classList.toggle('auto-collapsed');
+        const title=document.createElement('span');
+        title.textContent='🧠 AI思考';
+        const hintEx=document.createElement('span');
+        hintEx.className='hint expand'; hintEx.textContent='[展开]';
+        const hintCol=document.createElement('span');
+        hintCol.className='hint collapse'; hintCol.textContent='[收起]';
+        head.appendChild(title); head.appendChild(hintEx); head.appendChild(hintCol);
+        const tb=document.createElement('div');
+        tb.className='th-body';
+        tbBox.appendChild(head); tbBox.appendChild(tb);
+        // 插入到当前assistant回答之前（保证思考在回答上方）
+        const anchor=window._currentAssistEl;
+        if(anchor && anchor.parentNode) msgs.insertBefore(tbBox, anchor);
+        else msgs.appendChild(tbBox);
     }
-    const tb=box.querySelector('.th-body');
+    const tb=tbBox.querySelector('.th-body');
     tb.textContent+=text;
     msgs.scrollTop=msgs.scrollHeight;
-    return box;
+    return tbBox;
 }
 
+// ======== Markdown 轻量渲染（标题/表格/粗体/列表/引用/代码块） ========
+function mdEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mdInline(s){
+    return s
+        .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+        .replace(/\*([^*]+)\*/g,'<i>$1</i>')
+        .replace(/`([^`]+)`/g,'<code>$1</code>');
+}
+function mdTableHtml(rows){
+    return '<table class="md-table"><tbody>'+rows.map((r,i)=>'<tr>'+r.map(c=>'<'+(i===0?'th':'td')+'>'+mdInline(mdEsc(c.trim()))+'</'+(i===0?'th':'td')+'>').join('')+'</tr>').join('')+'</tbody></table>';
+}
 function formatContent(text,sources){
-    let html=text.replace(/\n/g,'<br>');
+    const lines=String(text||'').split('\n');
+    let html='', inTable=false, tableRows=[], inCode=false, codeBuf=[];
+    for(const raw of lines){
+        const line=mdEsc(raw);
+        const t=line.trim();
+        // 代码块
+        if(t.startsWith('```')){
+            if(inCode){ html+='<pre class="md-code">'+codeBuf.join('\n')+'</pre>'; codeBuf=[]; inCode=false; }
+            else inCode=true;
+            continue;
+        }
+        if(inCode){ codeBuf.push(line); continue; }
+        // 表格行（| 开头且 | 结尾）
+        if(t.startsWith('|') && t.endsWith('|')){
+            const cells=t.replace(/^\||\|$/g,'').split('|');
+            // 分隔行（--- 或 :--:）
+            if(cells.every(c=>/^:?-{2,}:?$/.test(c.trim()))){ continue; }
+            if(!inTable){ inTable=true; tableRows=[]; }
+            tableRows.push(cells);
+            continue;
+        }
+        if(inTable){ html+=mdTableHtml(tableRows); inTable=false; tableRows=[]; }
+        // 标题
+        const h=t.match(/^(#{1,4})\s+(.*)/);
+        if(h){ html+='<h'+(h[1].length)+'>'+mdInline(h[2])+'</h'+(h[1].length)+'>'; continue; }
+        // 分隔线
+        if(/^-{3,}$/.test(t)){ html+='<hr>'; continue; }
+        // 引用
+        if(t.startsWith('>')){ html+='<blockquote>'+mdInline(t.replace(/^>\s?/,''))+'</blockquote>'; continue; }
+        // 无序/有序列表
+        const ul=t.match(/^[-*•]\s+(.*)/);
+        if(ul){ html+='<div class="md-li">• '+mdInline(ul[1])+'</div>'; continue; }
+        const ol=t.match(/^\d+[.、]\s+(.*)/);
+        if(ol){ html+='<div class="md-li">'+mdInline(ol[0])+'</div>'; continue; }
+        // 空行
+        if(!t){ html+='<br>'; continue; }
+        html+='<div class="md-p">'+mdInline(line)+'</div>';
+    }
+    if(inTable) html+=mdTableHtml(tableRows);
+    if(inCode) html+='<pre class="md-code">'+codeBuf.join('\n')+'</pre>';
     if(sources&&sources.length){
         html+='<div class="src">📎 '+sources.map(s=>s.file_name||s.source||'?').filter((v,i,a)=>a.indexOf(v)===i).join(' · ')+'</div>';
     }
@@ -524,6 +821,18 @@ document.addEventListener('DOMContentLoaded',()=>{
 const style=document.createElement('style');
 style.textContent='@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}';
 document.head.appendChild(style);
+
+// 全局错误捕获：页面出现JS错误时显示在顶部，便于排查
+window.addEventListener('error',(ev)=>{
+    try{
+        const div=document.createElement('div');
+        div.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(255,71,87,0.95);color:#fff;font-size:11px;padding:6px 12px;text-align:center';
+        div.textContent='⚠️ JS错误: '+ev.message;
+        document.body.appendChild(div);
+        setTimeout(()=>div.remove(),8000);
+    }catch(e){}
+});
 </script>
+<script src="changelog.js"></script>
 </body>
 </html>

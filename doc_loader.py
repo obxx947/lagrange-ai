@@ -153,7 +153,7 @@ def sync_desktop_to_lagrange_docs() -> dict:
 
 def get_vectorizable_files() -> List[Path]:
     """
-    获取 lagrange_docs 中所有应参与向量化的文件列表
+    获取 lagrange_docs + lagrange_docs_backup（第二知识库）中所有应参与向量化的文件列表
     
     排除：
     - HTML 模拟器文件（仅用于前端渲染）
@@ -162,12 +162,19 @@ def get_vectorizable_files() -> List[Path]:
     docs_path = get_lagrange_docs_path()
     if not docs_path.exists():
         return []
-    
+
+    # 第二知识库：备份旧资料（第一知识库检索不清晰时使用）
+    backup_path = Path(config.LAGRANGE_DOCS_PATH) / ".." / "lagrange_docs_backup"
+    backup_path = backup_path.resolve()
+
     vector_files = []
-    for item in docs_path.rglob("*"):
-        if item.is_file() and is_vectorizable(item):
-            vector_files.append(item)
-    
+    for base_path in (docs_path, backup_path):
+        if not base_path.exists():
+            continue
+        for item in base_path.rglob("*"):
+            if item.is_file() and is_vectorizable(item):
+                vector_files.append(item)
+
     return vector_files
 
 

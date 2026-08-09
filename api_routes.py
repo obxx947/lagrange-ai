@@ -495,10 +495,10 @@ async def api_battle_simulate(data: dict):
     
     ally, enemy = [], []
     for s in data.get("allyShips",[]):
-        ws = [{"d":w,"p":"cd","cd":random.random()*w.get("cooldown",4)*0.5,"lk":0,"atk":0,"sf":0,"ts":w.get("attacks",1)*w.get("ammo",1),"tg":None} for w in s.get("weapons",[])]
+        ws = [{"d":w,"p":"lk","cd":0,"lk":w.get("lockTime",2),"atk":0,"sf":0,"ts":w.get("attacks",1)*w.get("ammo",1),"tg":None} for w in s.get("weapons",[])]
         ally.append({"id":s.get("id"),"n":s.get("name",""),"hp":s.get("hp",5e4),"mhp":s.get("hp",5e4),"pa":s.get("physicalArmor",10),"es":s.get("energyArmor",5),"ev":s.get("evasion",0),"esc":s.get("isEscort",False),"esd":s.get("isEscorted",False),"alive":True,"ws":ws,"td":0})
     for s in data.get("enemyShips",[]):
-        ws = [{"d":w,"p":"cd","cd":random.random()*w.get("cooldown",4)*0.5,"lk":0,"atk":0,"sf":0,"ts":w.get("attacks",1)*w.get("ammo",1),"tg":None} for w in s.get("weapons",[])]
+        ws = [{"d":w,"p":"lk","cd":0,"lk":w.get("lockTime",2),"atk":0,"sf":0,"ts":w.get("attacks",1)*w.get("ammo",1),"tg":None} for w in s.get("weapons",[])]
         enemy.append({"id":s.get("id"),"n":s.get("name",""),"hp":s.get("hp",5e4),"mhp":s.get("hp",5e4),"pa":s.get("physicalArmor",10),"es":s.get("energyArmor",5),"ev":s.get("evasion",0),"esc":s.get("isEscort",False),"esd":s.get("isEscorted",False),"alive":True,"ws":ws,"td":0})
     
     t, dt, mt = 0.0, 0.1, data.get("maxTime",300)
@@ -512,11 +512,36 @@ async def api_battle_simulate(data: dict):
                 if not ship["alive"]: continue
                 for ws in ship["ws"]:
                     w = ws["d"]
+                    # 首轮免冷却：初始 phase=lk；锁定与冷却并行（战斗机制.txt）
                     if ws["p"] == "cd":
                         ws["cd"] -= dt
-                        if ws["cd"] <= 0: ws["p"] = "lk"; ws["lk"] = w.get("lockTime",2)
+                        if ws["lk"] > 0:
+                            ws["lk"] -= dt
+                            if ws["lk"] <= 0: ws["tg"] = random.choice(enemies) if enemies else None
+                        if ws["cd"] <= 0:
+                            if ws["lk"] > 0:
+                                ws["p"] = "lk"
+                            elif ws["tg"]:
+                                ws["p"] = "atk"; ws["atk"] = w.get("atkDuration",0); ws["sf"] = 0
+                                if w.get("atkDuration",0) <= 0:
+                                    for _ in range(ws["ts"]):
+                                        tg = ws["tg"]
+                                        if not tg["alive"]: break
+                                        h = (w.get("hitMin",50)+random.random()*(w.get("hitMax",70)-w.get("hitMin",50)))/100*(1-tg["ev"]/100)
+                                        if random.random() > h: continue
+                                        if tg["esd"] and ((side=="a" and ae) or (side=="e" and ee)): continue
+                                        tech = w.get("singleDmg",100)*0.05
+                                        dmg = e_dmg(w.get("singleDmg",100),tech,tg["es"]) if w.get("dmgType")=="energy" else p_dmg(w.get("singleDmg",100),tech,tg["pa"])
+                                        if w.get("crit") and random.random()<CRIT: dmg*=1.5
+                                        dmg = max(0,round(dmg))
+                                        tg["hp"] -= dmg; ship["td"] += dmg
+                                        if tg["hp"] <= 0: tg["hp"] = 0; tg["alive"] = False
+                                    ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4); ws["lk"] = w.get("lockTime",2)
+                            else:
+                                ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4); ws["lk"] = w.get("lockTime",2)
                     elif ws["p"] == "lk":
-                        ws["lk"] -= dt; ws["tg"] = random.choice(enemies) if enemies else None
+                        ws["lk"] -= dt
+                        if not ws["tg"]: ws["tg"] = random.choice(enemies) if enemies else None
                         if ws["lk"] <= 0 and ws["tg"]:
                             ws["p"] = "atk"; ws["atk"] = w.get("atkDuration",0); ws["sf"] = 0
                             if w.get("atkDuration",0) <= 0:
@@ -532,7 +557,7 @@ async def api_battle_simulate(data: dict):
                                     dmg = max(0,round(dmg))
                                     tg["hp"] -= dmg; ship["td"] += dmg
                                     if tg["hp"] <= 0: tg["hp"] = 0; tg["alive"] = False
-                                ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4)
+                                ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4); ws["lk"] = w.get("lockTime",2)
                     elif ws["p"] == "atk":
                         ws["atk"] -= dt
                         tg = ws["tg"]
@@ -548,7 +573,7 @@ async def api_battle_simulate(data: dict):
                                 dmg = max(0,round(dmg))
                                 tg["hp"] -= dmg; ship["td"] += dmg; ws["sf"] += 1
                                 if tg["hp"] <= 0: tg["hp"] = 0; tg["alive"] = False; break
-                        if ws["atk"] <= 0 or ws["sf"] >= ws["ts"]: ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4); ws["tg"] = None
+                        if ws["atk"] <= 0 or ws["sf"] >= ws["ts"]: ws["p"] = "cd"; ws["cd"] = w.get("cooldown",4); ws["lk"] = w.get("lockTime",2); ws["tg"] = None
         if not any(s["alive"] for s in ally): return {"winner":"enemy","duration":round(t,1),"allyDmg":sum(s["td"] for s in ally),"enemyDmg":sum(s["td"] for s in enemy)}
         if not any(s["alive"] for s in enemy): return {"winner":"ally","duration":round(t,1),"allyDmg":sum(s["td"] for s in ally),"enemyDmg":sum(s["td"] for s in enemy)}
     return {"winner":"timeout","duration":round(t,1),"allyDmg":sum(s["td"] for s in ally),"enemyDmg":sum(s["td"] for s in enemy)}
@@ -583,6 +608,7 @@ async def api_agent_chat(request: Request):
     user_message = body.get("message", "") if isinstance(body, dict) else str(body)
     history = body.get("history", []) if isinstance(body, dict) else []
     sim_state = body.get("simulator_state") if isinstance(body, dict) else None
+    ask_answer = body.get("ask_answer") if isinstance(body, dict) else None
 
     return StreamingResponse(
         agent_chat_stream(
@@ -590,6 +616,7 @@ async def api_agent_chat(request: Request):
             history=history,
             user_id=0,
             simulator_state=sim_state,
+            ask_answer=ask_answer,
         ),
         media_type="text/event-stream",
         headers={
@@ -643,3 +670,24 @@ async def api_switch_model(data: dict):
         "switched_to": target.get("name") or target.get("model"),
         "active_model": active.get("model_name") or active.get("model"),
     }
+
+
+# ==================== 公开搜索代理（供静态版跨域使用） ====================
+
+@router.get("/search")
+async def api_search(q: str = ""):
+    """
+    免费联网搜索代理（Bing，无需Key）。
+    供静态版前端跨域调用，已配置CORS。
+    """
+    if not q or len(q) > 200:
+        return {"results": [], "engine": "none", "error": "参数 q 必填"}
+    from fastapi.responses import JSONResponse
+    from agent_cache import _bing_search
+    result = _bing_search(q)
+    resp = JSONResponse(result)
+    # 允许任何来源跨域（静态版部署在GitHub Pages等任意域名）
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
+    return resp

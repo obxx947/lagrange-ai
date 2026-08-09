@@ -132,8 +132,16 @@ def build_vector_index() -> dict:
             if not content or len(content.strip()) < 10:
                 print(f"[RAG] 跳过空文件或内容过短：{file_path.name}")
                 continue
-            # 使用相对路径作为来源名（子文件夹显示完整路径）
-            rel_path = file_path.relative_to(config.LAGRANGE_DOCS_PATH).as_posix()
+            # 使用相对路径作为来源名（子文件夹显示完整路径；第二知识库 backup 文件带 backup/ 前缀）
+            try:
+                rel_path = file_path.relative_to(config.LAGRANGE_DOCS_PATH).as_posix()
+            except ValueError:
+                # 不在 lagrange_docs 下 → 属于 lagrange_docs_backup 第二知识库
+                backup_base = (Path(config.LAGRANGE_DOCS_PATH) / ".." / "lagrange_docs_backup").resolve()
+                try:
+                    rel_path = "backup/" + file_path.relative_to(backup_base).as_posix()
+                except ValueError:
+                    rel_path = "backup/" + file_path.name
             chunks = split_text_into_chunks(content, rel_path)
             all_chunks.extend(chunks)
             print(f"[RAG] ✓ {rel_path} → {len(chunks)} 个文本块")

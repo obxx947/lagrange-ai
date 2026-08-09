@@ -107,6 +107,7 @@ class ShipInstance:
     weapon_states: List[dict] = field(default_factory=list)
     sub_systems: Dict[str, bool] = field(default_factory=dict)
     sub_system_repair_timers: Dict[str, float] = field(default_factory=dict)
+    sub_system_repair_counts: Dict[str, int] = field(default_factory=dict)  # 已自维修次数
     
     # 舰载机
     embarked_aircraft: List['ShipInstance'] = field(default_factory=list)
@@ -149,6 +150,13 @@ MIN_DAMAGE_RATIO = 0.1    # 实弹未穿透保底10%
 CRIT_BASE_RATE = 0.15     # 基础暴击率15%
 SYSTEM_DAMAGE_CHANCE = 0.10  # 每次命中10%概率破坏系统
 PLUTUS_DAMAGE_REDUCTION = 0.30  # 普卢托斯之盾旗舰30%减伤
+# 系统自维修次数上限（战斗机制.txt）：主武器/机库自修2次，指挥自修3次，动力战斗中不可修
+SYSTEM_REPAIR_LIMITS = {
+    "main_weapon": 2,
+    "hangar": 2,
+    "command": 3,
+    "propulsion": 0,
+}
 
 
 def calc_energy_damage(base_dmg: float, target_energy_armor_pct: float,
@@ -178,13 +186,14 @@ def calc_physical_damage(base_dmg: float, target_armor: float,
 
 
 def calc_hit_chance(base_hit: float, lock_efficiency: float,
-                    evasion: float = 0.0, bomb_distance: float = 15.0) -> float:
+                    evasion: float = 0.0, bomb_distance: float = 15.0,
+                    hit_bonus: float = 0.0) -> float:
     """
     命中率计算
-    公式：基础命中 × (1 + 命中加成 - 目标闪避) × 锁定效率
+    公式：基础命中 × (1 + 命中加成 - 目标闪避) × 锁定效率（战斗机制.txt）
     轰炸距离调整：>15吉米每吉米-2%, <15吉米每吉米+2%
     """
-    hit = base_hit * (1.0 - evasion) * lock_efficiency
+    hit = base_hit * (1.0 + hit_bonus - evasion) * lock_efficiency
     # 轰炸距离修正
     if bomb_distance > 15:
         hit -= (bomb_distance - 15) * 0.02
@@ -229,15 +238,15 @@ class BattleSimulator:
         self._init_weapon_states()
     
     def _init_weapon_states(self):
-        """初始化所有舰船的武器状态"""
+        """初始化所有舰船的武器状态（首轮免冷却，锁定与冷却并行——战斗机制.txt）"""
         for ship in self.state.ally_ships + self.state.enemy_ships:
             ship.weapon_states = []
             for weapon in ship.weapons:
                 ship.weapon_states.append({
                     "weapon": weapon,
-                    "phase": "cooldown",     # cooldown / lock / attack
-                    "cooldown_remaining": random.uniform(0, weapon.cooldown * 0.5),
-                    "lock_remaining": 0.0,
+                    "phase": "lock",        # 开战第一轮攻击不需要冷却，直接从锁定开始
+                    "cooldown_remaining": 0.0,
+                    "lock_remaining": weapon.lock_time,
                     "attack_remaining": 0.0,
                     "shots_fired": 0,
                     "total_shots": weapon.ammo * weapon.attacks,
@@ -288,23 +297,47 @@ class BattleSimulator:
         )
     
     def _process_ship_weapons(self, ship: ShipInstance, enemies: List[ShipInstance], dt: float):
-        """处理单艘舰船的所有武器"""
+        """处理单艘舰船的所有武器（锁定与冷却同时进行，一轮周期=max(冷却,锁定)+攻击持续）"""
         for ws in ship.weapon_states:
             weapon = ws["weapon"]
             
             if ws["phase"] == "cooldown":
+                # 冷却阶段同时进行目标锁定（战斗机制.txt：锁定目标的同时进行冷却）
                 ws["cooldown_remaining"] -= dt
+                if ws["lock_remaining"] > 0:
+                    ws["lock_remaining"] -= dt
+                    if ws["lock_remaining"] <= 0:
+                        ws["current_target"] = self._find_target(ship, enemies, weapon)
                 if ws["cooldown_remaining"] <= 0:
-                    ws["phase"] = "lock"
-                    ws["lock_remaining"] = weapon.lock_time
+                    if ws["lock_remaining"] > 0:
+                        # 锁定未完成 → 继续锁定
+                        ws["phase"] = "lock"
+                    else:
+                        # 锁定与冷却均完成 → 进入攻击
+                        target = ws["current_target"]
+                        if target and target.is_alive():
+                            ws["phase"] = "attack"
+                            ws["attack_remaining"] = weapon.attack_duration
+                            ws["shots_fired"] = 0
+                            # 0持续时间的武器立即发射全部
+                            if weapon.attack_duration <= 0:
+                                self._fire_all_shots(ship, target, weapon, ws)
+                                ws["phase"] = "cooldown"
+                                ws["cooldown_remaining"] = calc_final_cooldown(weapon.cooldown)
+                                ws["lock_remaining"] = weapon.lock_time  # 下一轮锁定与冷却并行
+                        else:
+                            ws["phase"] = "cooldown"
+                            ws["cooldown_remaining"] = calc_final_cooldown(weapon.cooldown)
+                            ws["lock_remaining"] = weapon.lock_time
             
             elif ws["phase"] == "lock":
                 ws["lock_remaining"] -= dt
                 # 锁定期间选择目标
-                target = self._find_target(ship, enemies, weapon)
-                ws["current_target"] = target
+                if not ws["current_target"]:
+                    ws["current_target"] = self._find_target(ship, enemies, weapon)
                 
                 if ws["lock_remaining"] <= 0:
+                    target = ws["current_target"]
                     if target and target.is_alive():
                         ws["phase"] = "attack"
                         ws["attack_remaining"] = weapon.attack_duration
@@ -314,9 +347,11 @@ class BattleSimulator:
                             self._fire_all_shots(ship, target, weapon, ws)
                             ws["phase"] = "cooldown"
                             ws["cooldown_remaining"] = calc_final_cooldown(weapon.cooldown)
+                            ws["lock_remaining"] = weapon.lock_time
                     else:
                         ws["phase"] = "cooldown"
                         ws["cooldown_remaining"] = calc_final_cooldown(weapon.cooldown)
+                        ws["lock_remaining"] = weapon.lock_time
             
             elif ws["phase"] == "attack":
                 ws["attack_remaining"] -= dt
@@ -335,6 +370,7 @@ class BattleSimulator:
                 if ws["attack_remaining"] <= 0 or ws["shots_fired"] >= ws["total_shots"]:
                     ws["phase"] = "cooldown"
                     ws["cooldown_remaining"] = calc_final_cooldown(weapon.cooldown)
+                    ws["lock_remaining"] = weapon.lock_time  # 下一轮锁定与冷却并行
                     ws["current_target"] = None
     
     def _find_target(self, attacker: ShipInstance, enemies: List[ShipInstance],
@@ -479,9 +515,21 @@ class BattleSimulator:
         return dmg
     
     def _attempt_system_damage(self, target: ShipInstance, weapon: Weapon):
-        """尝试破坏目标舰船系统"""
+        """尝试破坏目标舰船系统（含自维修次数上限，战斗机制.txt）"""
         for sys_name, efficiency in weapon.sub_system_targets.items():
             if target.sub_systems.get(sys_name, True):
+                limit = SYSTEM_REPAIR_LIMITS.get(sys_name, 2)
+                repaired = target.sub_system_repair_counts.get(sys_name, 0)
+                if limit <= 0 or repaired >= limit:
+                    # 修复次数已用尽（或战斗中不可修）→ 永久损坏
+                    target.sub_systems[sys_name] = False
+                    target.sub_system_repair_counts[sys_name] = repaired + 1
+                    hp_penalty = target.max_hp * 0.05
+                    target.current_hp -= hp_penalty
+                    self.state.logs.append(
+                        f"[{self.state.time:.1f}s] {target.name} 的{sys_name}系统被破坏（永久损坏）！"
+                    )
+                    break
                 eff_value = {"high": 0.6, "medium": 0.4, "low": 0.2}.get(efficiency, 0.3)
                 if random.random() < eff_value:
                     target.sub_systems[sys_name] = False
@@ -514,15 +562,22 @@ class BattleSimulator:
             target.current_hp = min(target.max_hp, target.current_hp + heal_amount)
     
     def _process_system_repairs(self, ship: ShipInstance, dt: float):
-        """处理系统修复计时器"""
+        """处理系统修复计时器（含自维修次数上限，战斗机制.txt）"""
         for sys_name, timer in list(ship.sub_system_repair_timers.items()):
+            limit = SYSTEM_REPAIR_LIMITS.get(sys_name, 2)
+            if limit <= 0:
+                # 战斗中不可修复的系统（如动力系统）：保持损坏
+                del ship.sub_system_repair_timers[sys_name]
+                continue
             ship.sub_system_repair_timers[sys_name] -= dt
             if ship.sub_system_repair_timers[sys_name] <= 0:
-                ship.sub_systems[sys_name] = True
+                if ship.sub_system_repair_counts.get(sys_name, 0) < limit:
+                    ship.sub_systems[sys_name] = True
+                    ship.sub_system_repair_counts[sys_name] = ship.sub_system_repair_counts.get(sys_name, 0) + 1
+                    self.state.logs.append(
+                        f"[{self.state.time:.1f}s] {ship.name} 的{sys_name}系统已修复（自修{ship.sub_system_repair_counts[sys_name]}/{limit}次）"
+                    )
                 del ship.sub_system_repair_timers[sys_name]
-                self.state.logs.append(
-                    f"[{self.state.time:.1f}s] {ship.name} 的{sys_name}系统已修复"
-                )
     
     def _check_win_condition(self) -> bool:
         """检查胜负条件"""

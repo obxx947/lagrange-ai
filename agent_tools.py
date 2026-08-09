@@ -86,6 +86,23 @@ TOOLS = [
                 "required": ["state_type"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_user",
+            "description": "当用户需求不明确、需要澄清时（如配队偏好、资源限制、目标场景、可选方案选择等），向用户提问。支持单选/多选/自由输入。提问后对话会暂停等待用户回答，用户回答后继续。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {"type": "string", "description": "要向用户提出的问题，尽量具体"},
+                    "options": {"type": "array", "items": {"type": "string"}, "description": "选项列表，可空（空则纯自由输入）"},
+                    "type": {"type": "string", "enum": ["single", "multiple", "free"], "description": "single=单选 multiple=多选 free=自由输入（不提供选项时用free）"},
+                    "required": {"type": "boolean", "description": "是否必答，默认true"}
+                },
+                "required": ["question"]
+            }
+        }
     }
 ]
 
@@ -145,15 +162,35 @@ def _battle_sim(fleet_config: dict, scenario: str = "escort") -> str:
         if not ally_cfg or not enemy_cfg:
             return json.dumps({"error": "请提供我方和敌方舰船配置"}, ensure_ascii=False)
 
-        # Simplified combat calculation
-        TUNE = 1.3
+        # Simplified combat calculation（基于战斗机制.txt公式）
+        TUNE = 1.3          # 调校系数
+        CRIT_RATE = 0.15    # 基础暴击率
+        CRIT_MULT = 1.5     # 基础暴击伤害
+
+        def weapon_cycle(w):
+            """一轮攻击时间 = max(冷却, 锁定) + 攻击持续时间（锁定与冷却同时进行，文档公式）"""
+            cd = max(w.get("cooldown", 8) or 1, 1)
+            lock = w.get("lockTime", 5) or 0
+            atk_dur = w.get("atkDuration", 0) or 0
+            return max(cd, lock) + atk_dur
+
+        def weapon_hit(w):
+            """平均命中率 = 基础命中区间均值 × (1 + 命中加成 - 闪避)"""
+            tgts = w.get("targets") or []
+            if tgts:
+                hits = [(t.get("hitMin", 50), t.get("hitMax", 70)) for t in tgts if isinstance(t, dict)]
+                if hits:
+                    return sum((a + b) / 2 for a, b in hits) / len(hits) / 100.0
+            return 0.8
 
         def calc_fleet_power(ships_cfg, side_name):
+            """汇总舰队：HP、护甲/护盾加权平均、逐武器基准DPM（未减抗，含命中/暴击期望）"""
             results = []
-            total_dpm = 0
             total_hp = 0
             total_armor = 0
-            total_energy_shield = 0
+            total_shield = 0
+            ship_count = 0
+            weapon_dpms = []  # [{type, per_shot_tuned, shots, rate, hit, crit}]
 
             for cfg in ships_cfg:
                 sid = cfg.get("id", "")
@@ -166,7 +203,6 @@ def _battle_sim(fleet_config: dict, scenario: str = "escort") -> str:
                 phys_armor = ship.get("physicalArmor", 0)
                 energy_armor = ship.get("energyArmor", 5)
 
-                # Calculate weapon DPM
                 ship_dpm = 0
                 weapon_details = []
                 for mod in ship.get("modules", {}).values():
@@ -175,34 +211,43 @@ def _battle_sim(fleet_config: dict, scenario: str = "escort") -> str:
                             base_dmg = w.get("singleDmg", 100)
                             ammo = w.get("ammo", 1)
                             attacks = w.get("attacks", 1)
-                            cooldown = max(w.get("cooldown", 8), 1)
-                            lock_time = w.get("lockTime", 5)
                             dmg_type = w.get("dmgType", "physical")
-                            cycle_time = max(cooldown, lock_time)
-
-                            # Raw DPM per weapon slot
-                            shots_per_min = 60 / cycle_time
-                            raw_dpm = base_dmg * ammo * attacks * shots_per_min
-                            tuned_dpm = raw_dpm * TUNE
-                            ship_dpm += tuned_dpm
-
+                            cycle = weapon_cycle(w)
+                            hit = weapon_hit(w)
+                            crit_mult = (1 + CRIT_RATE * (CRIT_MULT - 1)) if w.get("crit") else 1.0
+                            rate = 60 / cycle
+                            shots = ammo * attacks
+                            per_shot_tuned = base_dmg * TUNE  # 单发 × 调校
+                            # 基准DPM = 单发×调校 × 弹数 × 60/周期 × 命中 × 暴击期望（未减目标抗性）
+                            dpm = per_shot_tuned * shots * rate * hit * crit_mult
+                            ship_dpm += dpm
+                            weapon_dpms.append({
+                                "type": dmg_type,
+                                "per_shot_tuned": per_shot_tuned,
+                                "shots": shots,
+                                "rate": rate,
+                                "hit": hit,
+                                "crit": crit_mult,
+                                "count": count,  # 该舰船数量（多艘叠加）
+                            })
                             weapon_details.append({
                                 "name": w.get("name", "?"),
                                 "type": dmg_type,
                                 "single_dmg": base_dmg,
                                 "ammo": ammo,
                                 "attacks": attacks,
-                                "cooldown": cooldown,
-                                "lock_time": lock_time,
-                                "cycle": round(cycle_time, 1),
-                                "raw_dpm": round(raw_dpm),
-                                "tuned_dpm": round(tuned_dpm),
+                                "cooldown": w.get("cooldown", 8),
+                                "lock_time": w.get("lockTime", 5),
+                                "atk_duration": w.get("atkDuration", 0),
+                                "cycle": round(cycle, 1),
+                                "avg_hit": round(hit * 100, 1),
+                                "dpm": round(dpm),
                             })
 
                 total_hp += hp * count
                 total_armor += phys_armor * count
-                total_energy_shield += energy_armor * count
-                total_dpm += ship_dpm * count
+                total_shield += energy_armor * count
+                ship_count += count
 
                 results.append({
                     "id": sid,
@@ -215,31 +260,43 @@ def _battle_sim(fleet_config: dict, scenario: str = "escort") -> str:
                     "weapons": weapon_details[:3],  # top 3 weapons
                 })
 
-            avg_armor = total_armor / max(len(results), 1)
             return {
                 "ships": results,
                 "total_hp": total_hp,
-                "total_dpm": round(total_dpm),
-                "avg_phys_armor": round(avg_armor, 1),
-                "ship_count": sum(s.get("count", 1) for s in results),
+                "avg_phys_armor": total_armor / max(ship_count, 1),
+                "avg_energy_shield": total_shield / max(ship_count, 1),
+                "ship_count": ship_count,
+                "weapon_dpms": weapon_dpms,
             }
+
+        def net_dpm(weapon_dpms, armor, shield):
+            """
+            扣除目标抗性后的净DPM（战斗机制.txt公式）：
+            - 能量单发 = 基础×(1+调校) × (1 - 目标护盾%)，护盾≥100%免疫
+            - 物理单发 = 基础×(1+调校) - 目标护甲，不破防时保底 = 基础×10%×调校
+            """
+            total = 0.0
+            for w in weapon_dpms:
+                if w["type"] == "energy":
+                    if shield >= 100:
+                        per = 0.0
+                    else:
+                        per = w["per_shot_tuned"] * (1 - shield / 100.0)
+                else:
+                    per = max(w["per_shot_tuned"] - armor, w["per_shot_tuned"] * 0.1)
+                total += per * w["shots"] * w["rate"] * w["hit"] * w["crit"] * w["count"]
+            return total
 
         ally = calc_fleet_power(ally_cfg, "我方")
         enemy = calc_fleet_power(enemy_cfg, "敌方")
 
-        # Simulate engagement
-        ally_effective_dpm = ally["total_dpm"]
-        enemy_effective_dpm = enemy["total_dpm"]
+        # 我方输出吃敌方抗性，敌方输出吃我方抗性
+        ally_net_dpm = net_dpm(ally["weapon_dpms"], enemy["avg_phys_armor"], enemy["avg_energy_shield"])
+        enemy_net_dpm = net_dpm(enemy["weapon_dpms"], ally["avg_phys_armor"], ally["avg_energy_shield"])
 
-        # Physical damage reduction from armor
-        ally_armor = ally["avg_phys_armor"]
-        enemy_armor = enemy["avg_phys_armor"]
-        # Approximate: armor reduces DPM by armor*shots_per_min
-        ally_armor_reduction = enemy_armor * enemy["ship_count"] * 10
-        enemy_armor_reduction = ally_armor * ally["ship_count"] * 10
-
-        ally_net_dpm = max(0, ally_effective_dpm - enemy_armor_reduction)
-        enemy_net_dpm = max(0, enemy_effective_dpm - ally_armor_reduction)
+        # 分伤机制：可被攻击的舰船数 = 总舰船数/2.5 取整（文档公式）
+        ally_split = max(1, int(enemy["ship_count"] / 2.5))
+        enemy_split = max(1, int(ally["ship_count"] / 2.5))
 
         if ally_net_dpm <= 0 and enemy_net_dpm <= 0:
             winner = "平局（双方不破防）"
@@ -251,8 +308,8 @@ def _battle_sim(fleet_config: dict, scenario: str = "escort") -> str:
             winner = "我方"
             duration = "N/A（敌方不破防）"
         else:
-            ally_ttk = ally["total_hp"] / enemy_net_dpm * 60
-            enemy_ttk = ally["total_hp"] / ally_net_dpm * 60
+            ally_ttk = ally["total_hp"] / enemy_net_dpm * 60  # 我方存活时间
+            enemy_ttk = enemy["total_hp"] / ally_net_dpm * 60  # 敌方存活时间（修复：原为ally hp）
             if ally_ttk < enemy_ttk:
                 winner = "我方"
                 duration = f"{ally_ttk:.0f}秒"
@@ -265,23 +322,30 @@ def _battle_sim(fleet_config: dict, scenario: str = "escort") -> str:
             "ally": {
                 "ship_count": ally["ship_count"],
                 "total_hp": ally["total_hp"],
-                "total_dpm": ally["total_dpm"],
-                "avg_armor": ally["avg_phys_armor"],
+                "total_dpm": round(net_dpm(ally["weapon_dpms"], 0, 0)),
+                "avg_phys_armor": round(ally["avg_phys_armor"], 1),
+                "avg_energy_shield": round(ally["avg_energy_shield"], 1),
                 "net_dpm_vs_enemy": round(ally_net_dpm),
             },
             "enemy": {
                 "ship_count": enemy["ship_count"],
                 "total_hp": enemy["total_hp"],
-                "total_dpm": enemy["total_dpm"],
-                "avg_armor": enemy["avg_phys_armor"],
+                "total_dpm": round(net_dpm(enemy["weapon_dpms"], 0, 0)),
+                "avg_phys_armor": round(enemy["avg_phys_armor"], 1),
+                "avg_energy_shield": round(enemy["avg_energy_shield"], 1),
                 "net_dpm_vs_ally": round(enemy_net_dpm),
+            },
+            "split_mechanism": {
+                "ally_attackable_targets": ally_split,
+                "enemy_attackable_targets": enemy_split,
+                "formula": "可攻击舰船数 = 总舰船数 ÷ 2.5 取整（分伤机制）",
             },
             "prediction": {
                 "winner": winner,
                 "duration": duration,
-                "ally_dpm_advantage": round(ally["total_dpm"] - enemy["total_dpm"]),
+                "ally_dpm_advantage": round(net_dpm(ally["weapon_dpms"], 0, 0) - net_dpm(enemy["weapon_dpms"], 0, 0)),
             },
-            "note": "基于战斗机制.txt公式的简化推演。实际战斗受拦截、暴击、系统损毁、维修、护航等因素影响。"
+            "note": "基于战斗机制.txt公式的简化推演：单发=(基础×调校1.3-抗性)，周期=max(冷却,锁定)+攻击持续，含命中/暴击期望与分伤机制。实际战斗还受拦截、系统损毁、维修、护航等因素影响。"
         }, ensure_ascii=False, indent=2)
 
     except Exception as e:

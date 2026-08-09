@@ -77,3 +77,5 @@ Desktop.ini
 # 本地配置（含API Key，禁止上传）
 local_config.json
 .npm-cache/
+nul  
+nul  
