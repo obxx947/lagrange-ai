@@ -12,8 +12,10 @@ Agent 编排器
 """
 
 import json
+import os
 import time
 import uuid
+from pathlib import Path
 from typing import AsyncGenerator, Optional
 
 import httpx
@@ -164,6 +166,20 @@ CV3000 ×5 带 9索姆河 + 10VB 10个050 5个刺鳐 6个T800
 - 用户回答后基于回答继续推进，不要重复提问已回答过的问题
 """
 
+# ============ 共享系统提示词（单一来源：拉格朗日智能体3/data/system_prompt.md，所有智能体遵循同一份；加载失败回退内置常量） ============
+SHARED_PROMPT_PATH = os.getenv("LAGRANGE_SHARED_PROMPT", r"C:\Users\Administrator\Desktop\拉格朗日智能体3\data\system_prompt.md")
+
+def _load_system_prompt() -> str:
+    try:
+        p = Path(SHARED_PROMPT_PATH)
+        if p.exists():
+            t = p.read_text(encoding="utf-8").strip()
+            if len(t) > 100:
+                return t
+    except Exception:
+        pass
+    return SYSTEM_PROMPT
+
 
 async def agent_chat_stream(
     user_message: str,
@@ -294,7 +310,7 @@ async def agent_chat_stream(
         yield _sse("web_search", f"🌐 联网搜索异常: {str(e)[:50]}")
 
     # 步骤4：构建消息（清理所有reasoning_content）
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": _load_system_prompt()}]
     if rag_context:
         messages.append({"role": "system", "content": f"【本次检索到的知识库资料（含子代理汇总）】\n{rag_context[:8000]}"})
 
@@ -331,9 +347,9 @@ async def _run_loop(messages, user_message, all_rag_docs, web_results, api_key, 
     """
     Agent 主循环：工具调用 + 质检 + 输出，yield SSE事件。
     支持 ask_user 暂停：模型提问时保存状态并结束当前流，等待用户回答后由 agent_chat_stream 恢复。
-    tool_counts/total_tool_calls：工具调用计数（跨提问恢复延续），同一工具最多3次，总调用最多20次。
+    tool_counts/total_tool_calls：工具调用计数（跨提问恢复延续）；同一工具最多100次，总调用最多1000次；主循环上限200防死循环。
     """
-    max_iterations = 50
+    max_iterations = 200
     iteration = 0
     qc_regen_count = 0   # FULL_REGEN 重跑计数（≤6，与质检任务迭代上限一致）
     tool_counts = tool_counts or {}
@@ -386,10 +402,10 @@ async def _run_loop(messages, user_message, all_rag_docs, web_results, api_key, 
                             func_args = json.loads(tc["function"]["arguments"] or "{}")
                         except Exception:
                             func_args = {}
-                        # 工具调用计数（同一工具最多3次，总调用最多20次）
+                        # 工具调用上限：同一工具最多100次，总调用最多1000次
                         tool_counts[func_name] = tool_counts.get(func_name, 0) + 1
                         total_tool_calls += 1
-                        if tool_counts[func_name] > 3 or total_tool_calls > 20:
+                        if tool_counts[func_name] > 100 or total_tool_calls > 1000:
                             # 已达上限：不真正执行，直接返回"请直接回答"的工具结果，迫使模型输出
                             yield _sse("tool_start", f"⛔ 工具调用上限: {func_name}（已达{tool_counts[func_name]}次）", {"tool": func_name})
                             clean_tc = {

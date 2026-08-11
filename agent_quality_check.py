@@ -25,6 +25,7 @@
 """
 
 import json
+import os
 import re
 import asyncio
 from pathlib import Path
@@ -34,6 +35,20 @@ import httpx
 import config
 
 MAX_ITER = 6
+
+# ============ 共享系统提示词（复用 agent.js 唯一 system_prompt：拉格朗日智能体3/data/system_prompt.md；失败回退内置） ============
+QC_SHARED_PROMPT_PATH = os.getenv("LAGRANGE_SHARED_PROMPT", "C:/Users/Administrator/Desktop/拉格朗日智能体3/data/system_prompt.md")
+
+def _qc_load_system_prompt() -> str:
+    try:
+        p = Path(QC_SHARED_PROMPT_PATH)
+        if p.exists():
+            t = p.read_text(encoding="utf-8").strip()
+            if len(t) > 100:
+                return t
+    except Exception:
+        pass
+    return ""
 
 CLAIM_PROMPT = """你是主张拆解智能体。把AI回答拆解成一条条独立的原子事实，供后续逐条证据核验。
 
@@ -210,7 +225,7 @@ async def _call_llm(client, api_key, api_url, model, messages, temperature=0.1, 
 
 async def claim_split(client, api_key, api_url, model, question, answer):
     msg = await _call_llm(client, api_key, api_url, model, [
-        {"role": "system", "content": "你是主张拆解Agent。严格只输出JSON，忠实引用原文，禁止改写原文数值。"},
+        {"role": "system", "content": _qc_load_system_prompt() or "你是主张拆解Agent。严格只输出JSON，忠实引用原文，禁止改写原文数值。"},
         {"role": "user", "content": CLAIM_PROMPT.replace("{question}", question[:1000]).replace("{answer}", answer[:6000])},
     ], 0.1, 4096)
     j = parse_json_loose(msg.get("content", ""))
@@ -314,7 +329,7 @@ async def judge_cluster(client, api_key, api_url, model, question, evidences):
             web_text = "\n".join(f"- {w['title']}: {w['content']} ({w['url']})" for w in ev["web"])
         votes = await asyncio.gather(*[
             _call_llm(client, api_key, api_url, model, [
-                {"role": "system", "content": "你是质证裁判。严格只输出JSON，以资料库/数据库证据为准，禁止编造。"},
+                {"role": "system", "content": _qc_load_system_prompt() or "你是质证裁判。严格只输出JSON，以资料库/数据库证据为准，禁止编造。"},
                 {"role": "user", "content": JUDGE_VOTE_PROMPT
                  .replace("{question}", question[:800])
                  .replace("{fact}", str(ev["claim"])[:500])
@@ -337,7 +352,7 @@ async def fact_audit(client, api_key, api_url, model, question, answer, judge_re
         f"- 事实\"{r['evidence']['claim'][:80]}\" 裁判票: {', '.join(v.get('vote', '?') + '(' + str(v.get('error_type', '')) + ')' for v in r['votes'])}"
         for r in judge_results)
     msg = await _call_llm(client, api_key, api_url, model, [
-        {"role": "system", "content": "你是FACT-AUDIT审计员。严格只输出JSON。"},
+        {"role": "system", "content": _qc_load_system_prompt() or "你是FACT-AUDIT审计员。严格只输出JSON。"},
         {"role": "user", "content": AUDIT_PROMPT
          .replace("{question}", question[:800])
          .replace("{answer}", answer[:6000])
@@ -354,7 +369,7 @@ async def llm_judge(client, api_key, api_url, model, question, answer, judge_res
         f"- 事实: {r['evidence']['claim'][:100]}\n  裁判: {' | '.join(v.get('vote','?')+'['+str(v.get('error_type',''))+']'+str(v.get('detail','')) for v in r['votes'])}\n  证据: {','.join(k['source'] for k in r['evidence']['kb']) or '无'}"
         for r in judge_results)
     msg = await _call_llm(client, api_key, api_url, model, [
-        {"role": "system", "content": "你是LLM-as-Judge。严格只输出JSON，评分必须基于质证证据，禁止放水。"},
+        {"role": "system", "content": _qc_load_system_prompt() or "你是LLM-as-Judge。严格只输出JSON，评分必须基于质证证据，禁止放水。"},
         {"role": "user", "content": JUDGE_SCORE_PROMPT
          .replace("{question}", question[:800])
          .replace("{answer}", answer[:6000])
@@ -370,7 +385,7 @@ async def llm_judge(client, api_key, api_url, model, question, answer, judge_res
 async def chain_fix(client, api_key, api_url, model, question, answer, judge_result):
     error_list = json.dumps(judge_result.get("error_list") or [], ensure_ascii=False)[:3000]
     msg = await _call_llm(client, api_key, api_url, model, [
-        {"role": "system", "content": "你是链状回溯修正Agent。严格只输出修正后的回答文本。"},
+        {"role": "system", "content": _qc_load_system_prompt() or "你是链状回溯修正Agent。严格只输出修正后的回答文本。"},
         {"role": "user", "content": FIX_PROMPT
          .replace("{question}", question[:800])
          .replace("{answer}", answer[:6000])
