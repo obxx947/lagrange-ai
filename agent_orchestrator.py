@@ -347,7 +347,7 @@ async def _run_loop(messages, user_message, all_rag_docs, web_results, api_key, 
     """
     Agent 主循环：工具调用 + 质检 + 输出，yield SSE事件。
     支持 ask_user 暂停：模型提问时保存状态并结束当前流，等待用户回答后由 agent_chat_stream 恢复。
-    tool_counts/total_tool_calls：工具调用计数（跨提问恢复延续）；同一工具最多15次，总调用最多100次（全局硬性限制）；主循环上限200防死循环。
+    tool_counts/total_tool_calls：工具调用计数（跨提问恢复延续）；同一工具最多100次，总调用最多1000次；主循环上限200防死循环。
     """
     max_iterations = 200
     iteration = 0
@@ -402,10 +402,10 @@ async def _run_loop(messages, user_message, all_rag_docs, web_results, api_key, 
                             func_args = json.loads(tc["function"]["arguments"] or "{}")
                         except Exception:
                             func_args = {}
-                        # 工具调用上限：同一工具最多15次，总调用最多100次（全局硬性限制）
+                        # 工具调用上限：同一工具最多100次，总调用最多1000次
                         tool_counts[func_name] = tool_counts.get(func_name, 0) + 1
                         total_tool_calls += 1
-                        if tool_counts[func_name] > 15 or total_tool_calls > 100:
+                        if tool_counts[func_name] > 100 or total_tool_calls > 1000:
                             # 已达上限：不真正执行，直接返回"请直接回答"的工具结果，迫使模型输出
                             yield _sse("tool_start", f"⛔ 工具调用上限: {func_name}（已达{tool_counts[func_name]}次）", {"tool": func_name})
                             clean_tc = {
